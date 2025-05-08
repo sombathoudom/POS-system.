@@ -1,35 +1,39 @@
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { Link } from '@inertiajs/react';
 import { Fragment } from 'react';
 
-export function Breadcrumbs({ breadcrumbs }: { breadcrumbs: BreadcrumbItemType[] }) {
-    console.log(route().current());
+export function Breadcrumbs() {
+    const segments = window.location.pathname.split('/').filter((segment) => segment !== '');
+    const isDashboard = segments.length === 1 && segments[0] === 'dashboard';
     return (
         <>
-            {breadcrumbs.length > 0 && (
-                <Breadcrumb>
-                    <BreadcrumbList>
-                        {breadcrumbs.map((item, index) => {
-                            const isLast = index === breadcrumbs.length - 1;
+            <Breadcrumb>
+                <BreadcrumbList>
+                    <BreadcrumbItem>
+                        <Link href={'/dashboard'}>Dashboard</Link>
+                    </BreadcrumbItem>
+                    {!isDashboard &&
+                        segments.map((item, index) => {
+                            const isLast = index === segments.length - 1;
+                            const href = `/${segments.slice(0, index + 1).join('/')}`;
                             return (
                                 <Fragment key={index}>
-                                    <BreadcrumbItem>
-                                        {isLast ? (
-                                            <BreadcrumbPage>{item.title}</BreadcrumbPage>
-                                        ) : (
-                                            <BreadcrumbLink asChild>
-                                                <Link href={item.href}>{item.title}</Link>
-                                            </BreadcrumbLink>
-                                        )}
-                                    </BreadcrumbItem>
-                                    {!isLast && <BreadcrumbSeparator />}
+                                    <BreadcrumbSeparator className="hidden md:block" />
+                                    {isLast ? (
+                                        <BreadcrumbItem>
+                                            <BreadcrumbPage>{item}</BreadcrumbPage>
+                                        </BreadcrumbItem>
+                                    ) : (
+                                        <BreadcrumbItem className="hidden md:block">
+                                            <Link href={href}>{item}</Link>
+                                        </BreadcrumbItem>
+                                    )}
+                                    {/* {!isLast && <BreadcrumbSeparator />} */}
                                 </Fragment>
                             );
                         })}
-                    </BreadcrumbList>
-                </Breadcrumb>
-            )}
+                </BreadcrumbList>
+            </Breadcrumb>
         </>
     );
 }
