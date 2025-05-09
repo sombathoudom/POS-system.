@@ -1,7 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CategoryController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -12,12 +13,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 
-    Route::get('category', function () {
-        return Inertia::render('category/category');
-    })->name('category');
-    Route::get('category/create', function () {
-        return Inertia::render('category/create');
-    })->name('category.create');
+    // Route::get('category', function () {
+    //     return Inertia::render('category/category');
+    // })->name('category.index');
+
+    Route::get('category', [CategoryController::class, 'index'])->name('category.index');
+    Route::post('category', [CategoryController::class, 'store'])->name('category.store');
 });
 
 require __DIR__ . '/settings.php';
