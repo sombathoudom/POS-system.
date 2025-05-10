@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Inertia\Inertia;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use App\Http\Requests\CategoryRequest;
 
 class CategoryController extends Controller
 {
@@ -14,12 +15,23 @@ class CategoryController extends Controller
             'categories' => Category::paginate(10),
         ]);
     }
-    public function store(Request $request)
+
+    public function store(CategoryRequest $request)
     {
-        $request->validate([
-            'category_name' => 'required|string|max:255',
-        ]);
-        Category::create($request->all());
+        Category::create($request->validated());
         return redirect()->route('category.index');
+    }
+
+    public function update(CategoryRequest $request, Category $category)
+    {
+        $category->update($request->validated());
+        return to_route('category.index')->with('success', 'Category updated successfully');
+    }
+
+    public function destroy(Category $category, $id)
+    {
+        $category = Category::find($id);
+        $category->delete();
+        return to_route('category.index')->with('success', 'Category deleted successfully');
     }
 }

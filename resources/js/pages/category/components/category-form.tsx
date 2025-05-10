@@ -1,3 +1,4 @@
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,7 +40,7 @@ export default function categoryForm({
                     onChange={(e) => setFormData('category_name', e.target.value)}
                     className={errors.category_name ? 'border-red-500' : ''}
                 />
-                {errors.category_name && <p className="mt-1 text-sm text-red-500">{errors.category_name}</p>}
+                <InputError message={errors.category_name} />
             </div>
             <Button type="submit" disabled={isProcessing}>
                 {isProcessing ? 'Processing...' : isEditing ? 'Update' : 'Create'}

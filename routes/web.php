@@ -19,6 +19,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('category', [CategoryController::class, 'index'])->name('category.index');
     Route::post('category', [CategoryController::class, 'store'])->name('category.store');
+    Route::put('category/{category}', [CategoryController::class, 'update'])->name('category.update');
+    Route::delete('category/{id}/delete', [CategoryController::class, 'destroy'])->name('category.destroy');
 });
 
 require __DIR__ . '/settings.php';

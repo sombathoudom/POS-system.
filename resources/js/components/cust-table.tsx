@@ -1,8 +1,10 @@
+import CustPagination from '@/components/cust-pagination';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { PaginatedResponse } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
-
+import { CustAlertDialog } from './cust-alertdialog';
 interface ColumnConfig<T> {
     key: keyof T | string;
     header: string;
@@ -10,14 +12,15 @@ interface ColumnConfig<T> {
 }
 
 interface DataTableProps<T> {
-    data: T[];
+    data: PaginatedResponse<T>;
     columns: ColumnConfig<T>[];
     onEdit?: (item: T) => void;
     onDelete?: (item: T) => { url: string; id: string | number };
     idKey: keyof T;
+    onPageChange?: (page: number) => void;
 }
 
-export function CustTable<T>({ data, columns, onEdit, onDelete, idKey }: DataTableProps<T>) {
+export function CustTable<T>({ data, columns, onEdit, onDelete, idKey, onPageChange }: DataTableProps<T>) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<T | null>(null);
     const { delete: destroy, processing } = useForm();
@@ -30,7 +33,7 @@ export function CustTable<T>({ data, columns, onEdit, onDelete, idKey }: DataTab
     const confirmDelete = () => {
         if (selectedItem && onDelete) {
             const { url, id } = onDelete(selectedItem);
-            destroy(route(url), {
+            destroy(route(url, { id }), {
                 onSuccess: () => {
                     setDeleteDialogOpen(false);
                     setSelectedItem(null);
@@ -51,7 +54,7 @@ export function CustTable<T>({ data, columns, onEdit, onDelete, idKey }: DataTab
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {data.map((item) => (
+                    {data?.data.map((item) => (
                         <TableRow key={String(item[idKey])}>
                             {columns.map((column) => (
                                 <TableCell key={column.key as string}>
@@ -78,8 +81,9 @@ export function CustTable<T>({ data, columns, onEdit, onDelete, idKey }: DataTab
                     ))}
                 </TableBody>
             </Table>
-            {/* {onDelete && (
-                <AlertDialog
+            <CustPagination paginateItems={data} onPageChange={onPageChange} />
+            {onDelete && (
+                <CustAlertDialog
                     isOpen={deleteDialogOpen}
                     onOpenChange={setDeleteDialogOpen}
                     title="Are you absolutely sure?"
@@ -90,7 +94,7 @@ export function CustTable<T>({ data, columns, onEdit, onDelete, idKey }: DataTab
                     onCancel={() => setSelectedItem(null)}
                     variant="destructive"
                 />
-            )} */}
+            )}
         </>
     );
 }
