@@ -57,3 +57,11 @@ export interface PaginatedResponse<T> {
     to: number;
     total: number;
 }
+
+interface PageProps {
+    flash: {
+        success: string | null;
+        error: string | null;
+    };
+    [key: string]: string | null | object;
+}

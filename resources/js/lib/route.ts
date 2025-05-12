@@ -11,6 +11,11 @@ const mainNavItems: NavItem[] = [
         href: '/category',
         icon: CopyPlus,
     },
+    {
+        title: 'Suppliers',
+        href: '/supplier',
+        icon: CopyPlus,
+    },
 ];
 
 export { mainNavItems };

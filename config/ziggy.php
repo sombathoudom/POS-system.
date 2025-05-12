@@ -3,7 +3,6 @@
 return [
     'except' => [
         'api/*',
-        'dashboard',
         'admin/*',
         'storage/*'
     ],

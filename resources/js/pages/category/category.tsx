@@ -3,12 +3,12 @@ import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
-import { PaginatedResponse } from '@/types';
+import { PageProps, PaginatedResponse } from '@/types';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { PlusIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import CategoryForm, { CategoryFormData } from './components/category-form';
-
 interface Category {
     category_id?: number;
     category_name: string;
@@ -16,7 +16,7 @@ interface Category {
 }
 
 export default function CategoryIndex({ categories }: { categories: PaginatedResponse<Category> }) {
-    const { flash } = usePage().props;
+    const { flash } = usePage<PageProps>().props;
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const { data, setData, post, put, errors, processing } = useForm<CategoryFormData>({
         category_id: undefined,
@@ -78,11 +78,11 @@ export default function CategoryIndex({ categories }: { categories: PaginatedRes
         });
     };
 
-    // useEffect(() => {
-    //     if (flash?.message) {
-    //         toast.success(flash.message);
-    //     }
-    // }, [flash?.message]);
+    useEffect(() => {
+        if (flash?.success) {
+            toast.success(flash?.success);
+        }
+    }, [flash.success]);
 
     return (
         <AppLayout>
