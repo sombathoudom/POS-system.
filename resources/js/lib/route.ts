@@ -13,7 +13,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Suppliers',
-        href: '/supplier',
+        href: '/suppliers',
         icon: CopyPlus,
     },
 ];

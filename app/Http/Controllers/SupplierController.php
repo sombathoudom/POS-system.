@@ -2,16 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Supplier;
 use Illuminate\Http\Request;
+use App\Http\Requests\SupplierRequest;
 
 class SupplierController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return inertia('admin/supplier/suppliers');
+
+        $suppliers = Supplier::query();
+
+        if ($request->has('search')) {
+            $suppliers->where('supplier_name', 'like', '%' . $request->search . '%');
+        }
+
+        return inertia('admin/supplier/suppliers', [
+            'suppliers' => $suppliers->paginate(1),
+        ]);
     }
 
     /**
@@ -25,9 +36,10 @@ class SupplierController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(SupplierRequest $request)
     {
-        //
+        Supplier::create($request->validated());
+        return to_route('suppliers.index')->with('success', 'Supplier created successfully');
     }
 
     /**

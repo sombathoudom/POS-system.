@@ -16,8 +16,6 @@ type InertiaPaginationProps<T> = {
     onPageChange?: (page: number) => void;
 };
 const CustPagination = <T,>({ paginateItems, onPageChange }: InertiaPaginationProps<T>) => {
-    console.log(paginateItems);
-
     const { links, prev_page_url, next_page_url, current_page, last_page } = paginateItems;
     const getPageNumbers = () => {
         const pages: (number | 'ellipsis')[] = [];

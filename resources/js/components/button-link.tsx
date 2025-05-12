@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import Heading from './heading';
 import { Button } from './ui/button';
 
@@ -11,7 +11,8 @@ interface Props {
 
 export default function ButtonLink({ icon, href, title, buttonText }: Props) {
     return (
-        <>
+        <div className="flex max-w-fit flex-col">
+            <Head title={title} />
             <Heading title={title} />
             <Button asChild>
                 <Link href={route(href)} className="flex items-center gap-2">
@@ -19,6 +20,6 @@ export default function ButtonLink({ icon, href, title, buttonText }: Props) {
                     <span>{buttonText}</span>
                 </Link>
             </Button>
-        </>
+        </div>
     );
 }

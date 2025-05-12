@@ -22,7 +22,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('category', [CategoryController::class, 'store'])->name('category.store');
     Route::put('category/{category}', [CategoryController::class, 'update'])->name('category.update');
     Route::delete('category/{id}/delete', [CategoryController::class, 'destroy'])->name('category.destroy');
-    Route::resource('supplier', SupplierController::class);
+    Route::resource('suppliers', SupplierController::class);
 });
 
 require __DIR__ . '/settings.php';

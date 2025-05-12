@@ -24,7 +24,6 @@ export function CustTable<T>({ data, columns, onEdit, onDelete, idKey, onPageCha
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<T | null>(null);
     const { delete: destroy, processing } = useForm();
-
     const handleDelete = (item: T) => {
         setSelectedItem(item);
         setDeleteDialogOpen(true);
@@ -45,7 +44,7 @@ export function CustTable<T>({ data, columns, onEdit, onDelete, idKey, onPageCha
     return (
         <>
             <Table>
-                <TableHeader>
+                <TableHeader className="bg-primary-foreground">
                     <TableRow>
                         {columns.map((column) => (
                             <TableHead key={column.key as string}>{column.header}</TableHead>
@@ -62,7 +61,7 @@ export function CustTable<T>({ data, columns, onEdit, onDelete, idKey, onPageCha
                                 </TableCell>
                             ))}
                             {(onEdit || onDelete) && (
-                                <TableCell className="text-right">
+                                <TableCell className="text-center">
                                     <div className="flex justify-end gap-2">
                                         {onEdit && (
                                             <Button variant="outline" size="sm" onClick={() => onEdit(item)}>
