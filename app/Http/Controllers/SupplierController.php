@@ -29,7 +29,7 @@ class SupplierController extends Controller
      */
     public function create()
     {
-        return inertia('admin/supplier/create-supplier');
+        return inertia('admin/supplier/form-supplier');
     }
 
     /**
@@ -54,15 +54,21 @@ class SupplierController extends Controller
      */
     public function edit(string $id)
     {
-        //
+
+        $supplier = Supplier::find($id);
+        return inertia('admin/supplier/form-supplier', [
+            'supplier' => $supplier,
+        ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(SupplierRequest $request, string $id)
     {
-        //
+        $supplier = Supplier::find($id);
+        $supplier->update($request->validated());
+        return to_route('suppliers.index')->with('success', 'Supplier updated successfully');
     }
 
     /**
@@ -70,6 +76,8 @@ class SupplierController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $supplier = Supplier::find($id);
+        $supplier->delete();
+        return to_route('suppliers.index')->with('success', 'Supplier deleted successfully');
     }
 }

@@ -1,14 +1,15 @@
 import ButtonLink from '@/components/button-link';
 import { CustTable } from '@/components/cust-table';
 import { Input } from '@/components/ui/input';
+import useDebounce from '@/hooks/useDebounce';
 import AppLayout from '@/layouts/app-layout';
 import { PageProps, PaginatedResponse } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { PlusIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useDeferredValue, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-interface Supplier {
+export interface Supplier {
     supplier_id: number;
     supplier_name: string;
     contact_info: string;
@@ -17,7 +18,7 @@ interface Supplier {
 export default function suppliers({ suppliers }: { suppliers: PaginatedResponse<Supplier> }) {
     const { flash } = usePage<PageProps>().props;
     const [search, setSearch] = useState('');
-
+    const deferredQuery = useDeferredValue(search);
     useEffect(() => {
         if (flash?.success) {
             toast.success(flash.success);
@@ -25,12 +26,17 @@ export default function suppliers({ suppliers }: { suppliers: PaginatedResponse<
     }, [flash?.success]);
 
     // Handle search input changes
+    const debouncedSearch = useDebounce({ value: search, delay: 500 });
     const handleSearch = (value: string) => {
         setSearch(value);
+        console.log(debouncedSearch);
     };
 
     const handleEdit = (supplier: Supplier) => {
-        console.log(supplier);
+        router.visit(route('suppliers.edit', supplier.supplier_id), {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
     const handleDelete = (supplier: Supplier) => {
@@ -42,7 +48,7 @@ export default function suppliers({ suppliers }: { suppliers: PaginatedResponse<
 
     const handlePageChange = (page: number) => {
         router.visit(route('suppliers.index'), {
-            data: { page, search },
+            data: { page },
             preserveState: true,
             preserveScroll: true,
             only: ['suppliers'],
