@@ -13,15 +13,14 @@ class SupplierController extends Controller
      */
     public function index(Request $request)
     {
-
-        $suppliers = Supplier::query();
-
-        if ($request->has('search')) {
-            $suppliers->where('supplier_name', 'like', '%' . $request->search . '%');
-        }
+        $suppliers = Supplier::query()
+            ->when($request->search, function ($query, $search) {
+                $query->where('supplier_name', 'like', '%' . $search . '%');
+            })
+            ->paginate(10);
 
         return inertia('admin/supplier/suppliers', [
-            'suppliers' => $suppliers->paginate(1),
+            'suppliers' => $suppliers,
         ]);
     }
 
