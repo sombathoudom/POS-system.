@@ -3,6 +3,7 @@
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SupplierController;
 
 Route::get('/', function () {
@@ -23,6 +24,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('category/{category}', [CategoryController::class, 'update'])->name('category.update');
     Route::delete('category/{id}/delete', [CategoryController::class, 'destroy'])->name('category.destroy');
     Route::resource('suppliers', SupplierController::class);
+    Route::resource('products', ProductController::class);
 });
 
 require __DIR__ . '/settings.php';

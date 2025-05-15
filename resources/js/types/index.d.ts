@@ -58,10 +58,15 @@ export interface PaginatedResponse<T> {
     total: number;
 }
 
-interface PageProps {
+export interface Category {
+    category_id: number | number;
+    category_name: string;
+}
+export interface PageProps {
     flash: {
         success: string | null;
         error: string | null;
     };
+    categories: Category[];
     [key: string]: string | null | object;
 }
