@@ -3,30 +3,25 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class ProductRequest extends FormRequest
+class UpdateProductRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return true;
+        return true; // Adjust based on your authorization logic
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
+        $productId = $this->route('id');
+
         return [
             'product_name' => 'required|string|max:255',
             'product_code' => [
                 'required_if:type,single',
                 'nullable',
-                'unique:products,product_code',
+                Rule::unique('products', 'product_code')->ignore($productId),
             ],
             'category_id' => 'required|exists:categories,category_id',
             'type' => 'required|in:single,variant',
@@ -41,7 +36,6 @@ class ProductRequest extends FormRequest
                 'string',
                 'max:255',
             ],
-            //'barcode' => 'required_if:type,single|nullable|string|unique:products,barcode',
             'cost_price_usd' => [
                 'required_if:type,single',
                 'nullable',
@@ -66,32 +60,64 @@ class ProductRequest extends FormRequest
                 'numeric',
                 'min:0',
             ],
-            'image' => 'required',
-            'image.file' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'image.alt_text' => 'nullable|string|max:255',
+            // Product image validation - only one image
+            'image' => [
+                'nullable',
+                'image',
+                'mimes:jpeg,png,jpg,gif',
+                'max:2048',
+            ],
+            'image_id' => 'nullable|exists:product_images,id',
+            'image_alt_text' => 'nullable|string|max:255',
+
+            // Variants validation
             'variants' => [
                 'required_if:type,variant',
                 'nullable',
                 'array',
-                'min:1',
             ],
-            'variants.*.variant_code' => 'required|unique:product_variants,variant_code',
+            'variants.*.variant_code' => [
+                'required',
+                Rule::unique('product_variants', 'variant_code')->ignore($this->input('variants.*.id')),
+            ],
             'variants.*.size' => [
-                'nullable',
+                'required',
                 'in:FreeSize,xs,s,m,l,xl,xxl,xxxl',
             ],
             'variants.*.color' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
             ],
-            'variants.*.cost_price_usd' => 'required|numeric|min:0',
-            'variants.*.sell_price_usd' => 'required|numeric|min:0',
-            'variants.*.cost_price_khr' => 'required|numeric|min:0',
-            'variants.*.sell_price_khr' => 'required|numeric|min:0',
-            'variants.*.image' => 'nullable|array',
-            'variants.*.image.file' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'variants.*.image.alt_text' => 'nullable|string|max:255',
+            'variants.*.cost_price_usd' => [
+                'required',
+                'numeric',
+                'min:0',
+            ],
+            'variants.*.sell_price_usd' => [
+                'required',
+                'numeric',
+                'min:0',
+            ],
+            'variants.*.cost_price_khr' => [
+                'required',
+                'numeric',
+                'min:0',
+            ],
+            'variants.*.sell_price_khr' => [
+                'required',
+                'numeric',
+                'min:0',
+            ],
+            // Variant image validation - optional single image per variant
+            'variants.*.image' => [
+                'nullable',
+                'image',
+                'mimes:jpeg,png,jpg,gif',
+                'max:2048',
+            ],
+            'variants.*.image_id' => 'nullable|exists:product_variant_images,id',
+            'variants.*.image_alt_text' => 'nullable|string|max:255',
         ];
     }
 }

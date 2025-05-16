@@ -1,65 +1,100 @@
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
-import { cn } from '@/lib/utils';
 import { PageProps } from '@/types';
 import { useForm, usePage } from '@inertiajs/react';
-import { Check, ChevronsUpDown, Plus, X } from 'lucide-react';
-import { useState } from 'react';
+import { HelpCircle, Plus, Upload, X } from 'lucide-react';
 // TypeScript interfaces
 
 interface Image {
     file: File;
     alt_text: string;
-    [key: string]: string | File; // Add index signature
+    path?: string;
+    [key: string]: string | File | undefined;
 }
 
 interface Variant {
     size: string;
     color: string;
-    barcode: string;
+    variant_code: string;
     cost_price_usd: string;
     sell_price_usd: string;
     cost_price_khr: string;
     sell_price_khr: string;
-    images: Image[];
-    [key: string]: string | Image[]; // Add index signature
+    image?: Image | null;
+    [key: string]: string | Image | null | undefined;
 }
 
 interface FormData {
     product_name: string;
     category_id: string;
     type: 'single' | 'variant';
-    barcode: string;
+    product_code: string;
+    size: string;
+    color: string;
     cost_price_usd: string;
     sell_price_usd: string;
     cost_price_khr: string;
     sell_price_khr: string;
-    images: Image[];
+    image?: Image | null;
     variants: Variant[];
-    [key: string]: string | Image[] | Variant[] | 'single' | 'variant';
+    [key: string]: string | Image | Variant[] | 'single' | 'variant' | null | undefined;
 }
 
-export default function FormProducts() {
-    const { categories, flash } = usePage<PageProps>().props;
-    const [categoryOpen, setCategoryOpen] = useState(false);
+interface Product {
+    data: {
+        id: number;
+        product_name: string;
+        category: {
+            id: number;
+            name: string;
+        };
+        type: 'single' | 'variant';
+        product_code: string;
+        size: string;
+        color: string;
+        cost_price_usd: string;
+        sell_price_usd: string;
+        cost_price_khr: string;
+        sell_price_khr: string;
+        image: Image;
+        variants: Variant[];
+    };
+}
 
+export default function FormProducts({ product }: { product: Product }) {
+    const { categories, flash } = usePage<PageProps>().props;
     // Initialize form with useForm
     const form = useForm<FormData>({
-        product_name: '',
-        category_id: '',
-        type: 'single',
-        barcode: '',
-        cost_price_usd: '',
-        sell_price_usd: '',
-        cost_price_khr: '',
-        sell_price_khr: '',
-        images: [],
-        variants: [], // Initialize with empty array instead of array with empty variant
+        product_name: product?.data?.product_name || '',
+        category_id: product?.data?.category?.id ? String(product.data.category.id) : '',
+        type: product?.data?.type || 'single',
+        product_code: product?.data?.product_code || '',
+        size: product?.data?.size || '',
+        color: product?.data?.color || '',
+        cost_price_usd: product?.data?.cost_price_usd?.toString() || '',
+        sell_price_usd: product?.data?.sell_price_usd?.toString() || '',
+        cost_price_khr: product?.data?.cost_price_khr?.toString() || '',
+        sell_price_khr: product?.data?.sell_price_khr?.toString() || '',
+        image: product?.data?.image ?? null,
+        variants:
+            product?.data?.variants?.map((variant) => ({
+                ...variant,
+                size: variant.size || '',
+                color: variant.color || '',
+                variant_code: variant.variant_code || '',
+                cost_price_usd: variant.cost_price_usd?.toString() || '',
+                sell_price_usd: variant.sell_price_usd?.toString() || '',
+                cost_price_khr: variant.cost_price_khr?.toString() || '',
+                sell_price_khr: variant.sell_price_khr?.toString() || '',
+                image: variant.image ?? null,
+            })) || [],
     });
 
     // Handle flash messages
@@ -79,12 +114,12 @@ export default function FormProducts() {
             {
                 size: '',
                 color: '',
-                barcode: '',
+                variant_code: '',
                 cost_price_usd: '',
                 sell_price_usd: '',
                 cost_price_khr: '',
                 sell_price_khr: '',
-                images: [],
+                image: null,
             },
         ]);
     };
@@ -106,472 +141,525 @@ export default function FormProducts() {
 
     // Handle variant image changes
     const handleVariantImageChange = (index: number, files: FileList | null) => {
-        if (files) {
-            const newImages = Array.from(files).map((file) => ({ file, alt_text: '' }));
+        if (files && files.length > 0) {
             const newVariants = [...form.data.variants];
-            newVariants[index].images = [...newVariants[index].images, ...newImages];
+            newVariants[index].image = { file: files[0], alt_text: '' };
             form.setData('variants', newVariants);
         }
     };
 
     // Remove variant image
-    const removeVariantImage = (variantIndex: number, imageIndex: number) => {
+    const removeVariantImage = (variantIndex: number) => {
         const newVariants = [...form.data.variants];
-        newVariants[variantIndex].images = newVariants[variantIndex].images.filter((_, i) => i !== imageIndex);
+        newVariants[variantIndex].image = null;
         form.setData('variants', newVariants);
     };
 
     // Handle product image changes
     const handleProductImageChange = (files: FileList | null) => {
-        if (files) {
-            const newImages = Array.from(files).map((file) => ({ file, alt_text: '' }));
-            form.setData('images', [...form.data.images, ...newImages]);
+        if (files && files.length > 0) {
+            form.setData('image', { file: files[0], alt_text: '' });
         }
     };
 
     // Remove product image
-    const removeProductImage = (index: number) => {
-        form.setData(
-            'images',
-            form.data.images.filter((_, i) => i !== index),
-        );
+    const removeProductImage = () => {
+        form.setData('image', null);
     };
 
     // Handle form submission
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const formData = new FormData();
-        formData.append('product_name', form.data.product_name || '');
-        formData.append('category_id', form.data.category_id || '');
-        formData.append('type', form.data.type);
+        const hasNewFileUploads = form.data.image?.file instanceof File;
 
-        if (form.data.type === 'single') {
-            formData.append('barcode', form.data.barcode || '');
-            formData.append('cost_price_usd', form.data.cost_price_usd || '');
-            formData.append('sell_price_usd', form.data.sell_price_usd || '');
-            formData.append('cost_price_khr', form.data.cost_price_khr || '');
-            formData.append('sell_price_khr', form.data.sell_price_khr || '');
-        }
-
-        // Append product images
-        form.data.images.forEach((image, index) => {
-            formData.append(`images[${index}][file]`, image.file);
-            if (image.alt_text) formData.append(`images[${index}][alt_text]`, image.alt_text);
-        });
-
-        // Append variants for variant products
-        if (form.data.type === 'variant') {
-            form.data.variants.forEach((variant, index) => {
-                formData.append(`variants[${index}][size]`, variant.size || '');
-                formData.append(`variants[${index}][color]`, variant.color || '');
-                formData.append(`variants[${index}][barcode]`, variant.barcode || '');
-                formData.append(`variants[${index}][cost_price_usd]`, variant.cost_price_usd || '0');
-                formData.append(`variants[${index}][sell_price_usd]`, variant.sell_price_usd || '0');
-                formData.append(`variants[${index}][cost_price_khr]`, variant.cost_price_khr || '0');
-                formData.append(`variants[${index}][sell_price_khr]`, variant.sell_price_khr || '0');
-                variant.images.forEach((image, imgIndex) => {
-                    formData.append(`variants[${index}][images][${imgIndex}][file]`, image.file);
-                    if (image.alt_text) formData.append(`variants[${index}][images][${imgIndex}][alt_text]`, image.alt_text);
-                });
+        if (product?.data?.id) {
+            form.put(route('products.update', product.data.id), {
+                forceFormData: hasNewFileUploads,
+                onSuccess: () => {
+                    form.reset();
+                },
+                onError: () => {
+                    console.log(form.errors);
+                },
+            });
+        } else {
+            form.post(route('products.store'), {
+                forceFormData: true,
+                onSuccess: () => {
+                    form.reset();
+                },
             });
         }
-        console.log(form);
-        form.post(route('products.store'), {
-            forceFormData: true,
-            onSuccess: () => {
-                form.reset();
-                form.setData('variants', [
-                    {
-                        size: '',
-                        color: '',
-                        barcode: '',
-                        cost_price_usd: '',
-                        sell_price_usd: '',
-                        cost_price_khr: '',
-                        sell_price_khr: '',
-                        images: [],
-                    },
-                ]);
-            },
-            preserveScroll: true,
-        });
     };
 
     return (
         <AppLayout>
-            <div className="space-y-6 p-4">
-                <h2 className="text-2xl font-bold">Create New Product</h2>
+            <div className="container mx-auto space-y-6 p-6">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-3xl font-bold tracking-tight">Create New Product</h2>
+                </div>
 
-                <form className="space-y-4" onSubmit={handleSubmit}>
-                    <div className="space-y-2">
-                        <Label htmlFor="product_name">Product Name</Label>
-                        <Input
-                            id="product_name"
-                            value={form.data.product_name}
-                            onChange={(e) => form.setData('product_name', e.target.value)}
-                            placeholder="Enter product name"
-                        />
-                        {form.errors.product_name && <p className="text-sm text-red-500">{form.errors.product_name}</p>}
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Category</Label>
-                        <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    aria-expanded={categoryOpen}
-                                    className="w-full justify-between"
-                                    disabled={categories.length === 0}
-                                >
-                                    {form.data.category_id
-                                        ? categories.find((category) => String(category.category_id) === form.data.category_id)?.category_name
-                                        : 'Select category...'}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-full p-0">
-                                <Command>
-                                    <CommandInput placeholder="Search category..." />
-                                    <CommandEmpty>No category found.</CommandEmpty>
-                                    <CommandGroup>
-                                        {categories.map((category) => (
-                                            <CommandItem
-                                                key={category.category_id}
-                                                value={String(category.category_id)}
-                                                onSelect={(value) => {
-                                                    form.setData('category_id', value);
-                                                    setCategoryOpen(false);
-                                                }}
-                                            >
-                                                <Check
-                                                    className={cn(
-                                                        'mr-2 h-4 w-4',
-                                                        form.data.category_id === String(category.category_id) ? 'opacity-100' : 'opacity-0',
-                                                    )}
-                                                />
-                                                {category.category_name}
-                                            </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
-                        {form.errors.category_id && <p className="text-sm text-red-500">{form.errors.category_id}</p>}
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Product Type</Label>
-                        <Select
-                            value={form.data.type}
-                            onValueChange={(value) => {
-                                form.setData('type', value as 'single' | 'variant');
-                                if (value === 'variant') {
-                                    form.setData('variants', [
-                                        {
-                                            size: '',
-                                            color: '',
-                                            barcode: '',
-                                            cost_price_usd: '',
-                                            sell_price_usd: '',
-                                            cost_price_khr: '',
-                                            sell_price_khr: '',
-                                            images: [],
-                                        },
-                                    ]);
-                                } else {
-                                    form.setData('variants', []); // Clear variants when switching to single
-                                }
-                            }}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select product type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="single">Single Product</SelectItem>
-                                <SelectItem value="variant">Product with Variants</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Product Images</Label>
-                        <Input
-                            type="file"
-                            accept="image/jpeg,image/png,image/jpg,image/gif"
-                            multiple
-                            onChange={(e) => handleProductImageChange(e.target.files)}
-                            disabled={form.isDirty && form.processing}
-                        />
-                        <div className="mt-2 space-y-2">
-                            {form.data.images.map((image, index) => (
-                                <div key={index} className="flex items-center space-x-2">
-                                    <span>{image.file.name}</span>
+                <form className="space-y-6" onSubmit={handleSubmit}>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Basic Information</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="product_name">Product Name</Label>
                                     <Input
-                                        placeholder="Alt text"
-                                        value={image.alt_text}
-                                        onChange={(e) => {
-                                            const newImages = [...form.data.images];
-                                            newImages[index].alt_text = e.target.value;
-                                            form.setData('images', newImages);
-                                        }}
+                                        name="product_name"
+                                        id="product_name"
+                                        value={form.data.product_name}
+                                        onChange={(e) => form.setData('product_name', e.target.value)}
+                                        placeholder="Enter product name"
+                                        className="w-full"
                                     />
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => removeProductImage(index)}
-                                        disabled={form.processing}
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
+                                    <InputError message={form.errors.product_name} />
                                 </div>
-                            ))}
-                        </div>
-                        {form.errors['images.0.file'] && <p className="text-sm text-red-500">At least one product image is required</p>}
-                    </div>
+                                <div className="space-y-2">
+                                    <Label>Category</Label>
+                                    <Select value={form.data.category_id} onValueChange={(value) => form.setData('category_id', value)}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {categories.map((ele, i) => (
+                                                <SelectItem key={i} value={String(ele.category_id)}>
+                                                    {ele.category_name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={form.errors.category_id} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="product_code">Product Code</Label>
+                                    <Input
+                                        id="product_code"
+                                        value={form.data.product_code}
+                                        onChange={(e) => form.setData('product_code', e.target.value)}
+                                        placeholder="Enter product code"
+                                    />
+                                    <InputError message={form.errors.product_code} />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <Label>Product Type</Label>
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger>
+                                                <HelpCircle className="text-muted-foreground h-4 w-4" />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Choose between a single product or a product with multiple variants</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                                <Select
+                                    value={form.data.type}
+                                    onValueChange={(value) => {
+                                        form.setData('type', value as 'single' | 'variant');
+                                        if (value === 'variant') {
+                                            form.setData('variants', [
+                                                {
+                                                    size: '',
+                                                    color: '',
+                                                    variant_code: '',
+                                                    cost_price_usd: '',
+                                                    sell_price_usd: '',
+                                                    cost_price_khr: '',
+                                                    sell_price_khr: '',
+                                                    image: null,
+                                                },
+                                            ]);
+                                        } else {
+                                            form.setData('variants', []);
+                                        }
+                                    }}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select product type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="single">Single Product</SelectItem>
+                                        <SelectItem value="variant">Product with Variants</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Product Images</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                <div className="flex w-full items-center justify-center">
+                                    <label className="bg-muted/50 hover:bg-muted flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed">
+                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                            <Upload className="text-muted-foreground mb-2 h-6 w-6" />
+                                            <p className="text-muted-foreground text-sm">
+                                                <span className="font-semibold">Click to upload</span> or drag and drop
+                                            </p>
+                                            <p className="text-muted-foreground text-xs">PNG, JPG or GIF (MAX. 2MB)</p>
+                                        </div>
+                                        <Input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/jpeg,image/png,image/jpg,image/gif"
+                                            onChange={(e) => handleProductImageChange(e.target.files)}
+                                            disabled={form.isDirty && form.processing}
+                                        />
+                                    </label>
+                                </div>
+
+                                {form.data.image && (
+                                    <div className="flex items-center gap-4">
+                                        <div className="relative h-[100px] w-[100px]">
+                                            <div className="h-full w-full overflow-hidden rounded-lg border">
+                                                <img
+                                                    src={form.data.image.file ? URL.createObjectURL(form.data.image.file) : form.data.image.path}
+                                                    alt={form.data.image.alt_text || 'Product image'}
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="icon"
+                                                onClick={removeProductImage}
+                                                disabled={form.processing}
+                                                className="absolute -top-2 -right-2 h-6 w-6"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                        <Input
+                                            className="flex-1"
+                                            placeholder="Alt text"
+                                            value={form.data.image.alt_text}
+                                            onChange={(e) => {
+                                                const newImage = { ...form.data.image };
+                                                newImage.alt_text = e.target.value;
+                                                form.setData('image', newImage as Image);
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                                <InputError message={form.errors['image.file']} />
+                            </div>
+                        </CardContent>
+                    </Card>
 
                     {form.data.type === 'single' && (
-                        <>
-                            <div className="space-y-2">
-                                <Label htmlFor="barcode">Barcode</Label>
-                                <Input
-                                    id="barcode"
-                                    value={form.data.barcode}
-                                    onChange={(e) => form.setData('barcode', e.target.value)}
-                                    placeholder="Enter barcode"
-                                />
-                                {form.errors.barcode && <p className="text-sm text-red-500">{form.errors.barcode}</p>}
-                            </div>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Product Details</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="size">Size</Label>
+                                        <Select value={form.data.size} onValueChange={(value) => form.setData('size', value)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select size" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="FreeSize">Free Size</SelectItem>
+                                                <SelectItem value="xs">XS</SelectItem>
+                                                <SelectItem value="s">S</SelectItem>
+                                                <SelectItem value="m">M</SelectItem>
+                                                <SelectItem value="l">L</SelectItem>
+                                                <SelectItem value="xl">XL</SelectItem>
+                                                <SelectItem value="xxl">2XL</SelectItem>
+                                                <SelectItem value="xxxl">3XL</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <InputError message={form.errors.size} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="color">Color</Label>
+                                        <Input
+                                            id="color"
+                                            type="text"
+                                            value={form.data.color}
+                                            onChange={(e) => form.setData('color', e.target.value)}
+                                            placeholder="Enter color code (e.g., BLK)"
+                                        />
+                                        <InputError message={form.errors.color} />
+                                    </div>
+                                </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="cost_price_usd">Cost Price (USD)</Label>
-                                    <Input
-                                        id="cost_price_usd"
-                                        type="number"
-                                        step="0.01"
-                                        value={form.data.cost_price_usd}
-                                        onChange={(e) => form.setData('cost_price_usd', e.target.value)}
-                                        placeholder="0.00"
-                                    />
-                                    {form.errors.cost_price_usd && <p className="text-sm text-red-500">{form.errors.cost_price_usd}</p>}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="sell_price_usd">Sell Price (USD)</Label>
-                                    <Input
-                                        id="sell_price_usd"
-                                        type="number"
-                                        step="0.01"
-                                        value={form.data.sell_price_usd}
-                                        onChange={(e) => form.setData('sell_price_usd', e.target.value)}
-                                        placeholder="0.00"
-                                    />
-                                    {form.errors.sell_price_usd && <p className="text-sm text-red-500">{form.errors.sell_price_usd}</p>}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="cost_price_khr">Cost Price (KHR)</Label>
-                                    <Input
-                                        id="cost_price_khr"
-                                        type="number"
-                                        value={form.data.cost_price_khr}
-                                        onChange={(e) => form.setData('cost_price_khr', e.target.value)}
-                                        placeholder="0"
-                                    />
-                                    {form.errors.cost_price_khr && <p className="text-sm text-red-500">{form.errors.cost_price_khr}</p>}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="sell_price_khr">Sell Price (KHR)</Label>
-                                    <Input
-                                        id="sell_price_khr"
-                                        type="number"
-                                        value={form.data.sell_price_khr}
-                                        onChange={(e) => form.setData('sell_price_khr', e.target.value)}
-                                        placeholder="0"
-                                    />
-                                    {form.errors.sell_price_khr && <p className="text-sm text-red-500">{form.errors.sell_price_khr}</p>}
-                                </div>
-                            </div>
-                        </>
+                                <Tabs defaultValue="usd" className="w-full">
+                                    <TabsList className="grid w-full grid-cols-2">
+                                        <TabsTrigger value="usd">USD</TabsTrigger>
+                                        <TabsTrigger value="khr">KHR</TabsTrigger>
+                                    </TabsList>
+                                    <TabsContent value="usd" className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="cost_price_usd">Cost Price</Label>
+                                                <Input
+                                                    id="cost_price_usd"
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={form.data.cost_price_usd}
+                                                    onChange={(e) => form.setData('cost_price_usd', e.target.value)}
+                                                    placeholder="0.00"
+                                                />
+                                                <InputError message={form.errors.cost_price_usd} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="sell_price_usd">Sell Price</Label>
+                                                <Input
+                                                    id="sell_price_usd"
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={form.data.sell_price_usd}
+                                                    onChange={(e) => form.setData('sell_price_usd', e.target.value)}
+                                                    placeholder="0.00"
+                                                />
+                                                <InputError message={form.errors.sell_price_usd} />
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                    <TabsContent value="khr" className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="cost_price_khr">Cost Price</Label>
+                                                <Input
+                                                    id="cost_price_khr"
+                                                    type="number"
+                                                    value={form.data.cost_price_khr}
+                                                    onChange={(e) => form.setData('cost_price_khr', e.target.value)}
+                                                    placeholder="0"
+                                                />
+                                                <InputError message={form.errors.cost_price_khr} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="sell_price_khr">Sell Price</Label>
+                                                <Input
+                                                    id="sell_price_khr"
+                                                    type="number"
+                                                    value={form.data.sell_price_khr}
+                                                    onChange={(e) => form.setData('sell_price_khr', e.target.value)}
+                                                    placeholder="0"
+                                                />
+                                                <InputError message={form.errors.sell_price_khr} />
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                </Tabs>
+                            </CardContent>
+                        </Card>
                     )}
 
                     {form.data.type === 'variant' && (
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold">Product Variants</h3>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <CardTitle>Product Variants</CardTitle>
                                 <Button type="button" onClick={addVariant} variant="outline" size="sm" disabled={form.processing}>
                                     <Plus className="mr-2 h-4 w-4" />
                                     Add Variant
                                 </Button>
-                            </div>
-
-                            {form.data.variants.map((variant, index) => (
-                                <div key={index} className="space-y-4 rounded-lg border p-4">
-                                    <div className="flex items-center justify-between">
-                                        <h4 className="font-medium">Variant {index + 1}</h4>
-                                        {form.data.variants.length > 1 && (
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => removeVariant(index)}
-                                                disabled={form.processing}
-                                            >
-                                                <X className="h-4 w-4" />
-                                            </Button>
-                                        )}
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor={`variant-size-${index}`}>Size</Label>
-                                            <Input
-                                                id={`variant-size-${index}`}
-                                                value={variant.size}
-                                                onChange={(e) => handleVariantChange(index, 'size', e.target.value)}
-                                                placeholder="Enter size"
-                                            />
-                                            {form.errors[`variants.${index}.size`] && (
-                                                <p className="text-sm text-red-500">{form.errors[`variants.${index}.size`]}</p>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {form.data.variants.map((variant, index) => (
+                                    <Card key={index} className="relative">
+                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                            <CardTitle className="text-lg">Variant {index + 1}</CardTitle>
+                                            {form.data.variants.length > 1 && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => removeVariant(index)}
+                                                    disabled={form.processing}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
                                             )}
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor={`variant-color-${index}`}>Color</Label>
-                                            <Input
-                                                id={`variant-color-${index}`}
-                                                value={variant.color}
-                                                onChange={(e) => handleVariantChange(index, 'color', e.target.value)}
-                                                placeholder="Enter color"
-                                            />
-                                            {form.errors[`variants.${index}.color`] && (
-                                                <p className="text-sm text-red-500">{form.errors[`variants.${index}.color`]}</p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor={`variant-barcode-${index}`}>Barcode</Label>
-                                        <Input
-                                            id={`variant-barcode-${index}`}
-                                            value={variant.barcode}
-                                            onChange={(e) => handleVariantChange(index, 'barcode', e.target.value)}
-                                            placeholder="Enter barcode"
-                                        />
-                                        {form.errors[`variants.${index}.barcode`] && (
-                                            <p className="text-sm text-red-500">{form.errors[`variants.${index}.barcode`]}</p>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label>Variant Images</Label>
-                                        <Input
-                                            type="file"
-                                            accept="image/jpeg,image/png,image/jpg,image/gif"
-                                            multiple
-                                            onChange={(e) => handleVariantImageChange(index, e.target.files)}
-                                            disabled={form.isDirty && form.processing}
-                                        />
-                                        <div className="mt-2 space-y-2">
-                                            {variant.images.map((image, imgIndex) => (
-                                                <div key={imgIndex} className="flex items-center space-x-2">
-                                                    <span>{image.file.name}</span>
-                                                    <Input
-                                                        placeholder="Alt text"
-                                                        value={image.alt_text}
-                                                        onChange={(e) => {
-                                                            const newVariants = [...form.data.variants];
-                                                            newVariants[index].images[imgIndex].alt_text = e.target.value;
-                                                            form.setData('variants', newVariants);
-                                                        }}
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => removeVariantImage(index, imgIndex)}
-                                                        disabled={form.processing}
-                                                    >
-                                                        <X className="h-4 w-4" />
-                                                    </Button>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor={`variant-size-${index}`}>Size</Label>
+                                                    <Select value={variant.size} onValueChange={(value) => handleVariantChange(index, 'size', value)}>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Select size" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="FreeSize">Free Size</SelectItem>
+                                                            <SelectItem value="xs">XS</SelectItem>
+                                                            <SelectItem value="s">S</SelectItem>
+                                                            <SelectItem value="m">M</SelectItem>
+                                                            <SelectItem value="l">L</SelectItem>
+                                                            <SelectItem value="xl">XL</SelectItem>
+                                                            <SelectItem value="xxl">2XL</SelectItem>
+                                                            <SelectItem value="xxxl">3XL</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <InputError message={form.errors[`variants.${index}.size`]} />
                                                 </div>
-                                            ))}
-                                        </div>
-                                        {form.errors[`variants.${index}.images.0.file`] && (
-                                            <p className="text-sm text-red-500">Variant image error</p>
-                                        )}
-                                    </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor={`variant-color-${index}`}>Color</Label>
+                                                    <Input
+                                                        id={`variant-color-${index}`}
+                                                        value={variant.color}
+                                                        onChange={(e) => handleVariantChange(index, 'color', e.target.value)}
+                                                        placeholder="Enter color"
+                                                    />
+                                                    <InputError message={form.errors[`variants.${index}.color`]} />
+                                                </div>
+                                            </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor={`variant-cost_price_usd-${index}`}>Cost Price (USD)</Label>
-                                            <Input
-                                                id={`variant-cost_price_usd-${index}`}
-                                                type="number"
-                                                step="0.01"
-                                                value={variant.cost_price_usd}
-                                                onChange={(e) => handleVariantChange(index, 'cost_price_usd', e.target.value)}
-                                                placeholder="0.00"
-                                            />
-                                            {form.errors[`variants.${index}.cost_price_usd`] && (
-                                                <p className="text-sm text-red-500">{form.errors[`variants.${index}.cost_price_usd`]}</p>
-                                            )}
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor={`variant-sell_price_usd-${index}`}>Sell Price (USD)</Label>
-                                            <Input
-                                                id={`variant-sell_price_usd-${index}`}
-                                                type="number"
-                                                step="0.01"
-                                                value={variant.sell_price_usd}
-                                                onChange={(e) => handleVariantChange(index, 'sell_price_usd', e.target.value)}
-                                                placeholder="0.00"
-                                            />
-                                            {form.errors[`variants.${index}.sell_price_usd`] && (
-                                                <p className="text-sm text-red-500">{form.errors[`variants.${index}.sell_price_usd`]}</p>
-                                            )}
-                                        </div>
-                                    </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor={`variant-variant-code-${index}`}>Variant Code</Label>
+                                                <Input
+                                                    id={`variant-variant-code-${index}`}
+                                                    value={variant.variant_code}
+                                                    onChange={(e) => handleVariantChange(index, 'variant_code', e.target.value)}
+                                                    placeholder="Enter variant code"
+                                                />
+                                                <InputError message={form.errors[`variants.${index}.variant_code`]} />
+                                            </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor={`variant-cost_price_khr-${index}`}>Cost Price (KHR)</Label>
-                                            <Input
-                                                id={`variant-cost_price_khr-${index}`}
-                                                type="number"
-                                                value={variant.cost_price_khr}
-                                                onChange={(e) => handleVariantChange(index, 'cost_price_khr', e.target.value)}
-                                                placeholder="0"
-                                            />
-                                            {form.errors[`variants.${index}.cost_price_khr`] && (
-                                                <p className="text-sm text-red-500">{form.errors[`variants.${index}.cost_price_khr`]}</p>
-                                            )}
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor={`variant-sell_price_khr-${index}`}>Sell Price (KHR)</Label>
-                                            <Input
-                                                id={`variant-sell_price_khr-${index}`}
-                                                type="number"
-                                                value={variant.sell_price_khr}
-                                                onChange={(e) => handleVariantChange(index, 'sell_price_khr', e.target.value)}
-                                                placeholder="0"
-                                            />
-                                            {form.errors[`variants.${index}.sell_price_khr`] && (
-                                                <p className="text-sm text-red-500">{form.errors[`variants.${index}.sell_price_khr`]}</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                            {form.errors.variants && <p className="text-sm text-red-500">{form.errors.variants}</p>}
-                        </div>
+                                            <div className="space-y-4">
+                                                <Label>Variant Images</Label>
+                                                <div className="flex w-full items-center justify-center">
+                                                    <label className="bg-muted/50 hover:bg-muted flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed">
+                                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                            <Upload className="text-muted-foreground mb-2 h-6 w-6" />
+                                                            <p className="text-muted-foreground text-sm">
+                                                                <span className="font-semibold">Click to upload</span> or drag and drop
+                                                            </p>
+                                                        </div>
+                                                        <Input
+                                                            type="file"
+                                                            className="hidden"
+                                                            accept="image/jpeg,image/png,image/jpg,image/gif"
+                                                            onChange={(e) => handleVariantImageChange(index, e.target.files)}
+                                                            disabled={form.isDirty && form.processing}
+                                                        />
+                                                    </label>
+                                                </div>
+
+                                                {variant.image && (
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="relative h-[100px] w-[100px]">
+                                                            <div className="h-full w-full overflow-hidden rounded-lg border">
+                                                                <img
+                                                                    src={
+                                                                        variant.image.file
+                                                                            ? URL.createObjectURL(variant.image.file)
+                                                                            : variant.image.path
+                                                                    }
+                                                                    alt={variant.image.alt_text || 'Variant image'}
+                                                                    className="h-full w-full object-cover"
+                                                                />
+                                                            </div>
+                                                            <Button
+                                                                type="button"
+                                                                variant="destructive"
+                                                                size="icon"
+                                                                onClick={() => removeVariantImage(index)}
+                                                                disabled={form.processing}
+                                                                className="absolute -top-2 -right-2 h-6 w-6"
+                                                            >
+                                                                <X className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                        <Input
+                                                            className="flex-1"
+                                                            placeholder="Alt text"
+                                                            value={variant.image.alt_text}
+                                                            onChange={(e) => {
+                                                                const newVariants = [...form.data.variants];
+                                                                newVariants[index].image = { ...variant.image, alt_text: e.target.value } as Image;
+                                                                form.setData('variants', newVariants);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                )}
+                                                <InputError message={form.errors[`variants.${index}.image.file`]} />
+                                            </div>
+
+                                            <Tabs defaultValue="usd" className="w-full">
+                                                <TabsList className="grid w-full grid-cols-2">
+                                                    <TabsTrigger value="usd">USD</TabsTrigger>
+                                                    <TabsTrigger value="khr">KHR</TabsTrigger>
+                                                </TabsList>
+                                                <TabsContent value="usd" className="space-y-4">
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor={`variant-cost_price_usd-${index}`}>Cost Price</Label>
+                                                            <Input
+                                                                id={`variant-cost_price_usd-${index}`}
+                                                                type="number"
+                                                                step="0.01"
+                                                                value={variant.cost_price_usd}
+                                                                onChange={(e) => handleVariantChange(index, 'cost_price_usd', e.target.value)}
+                                                                placeholder="0.00"
+                                                            />
+                                                            <InputError message={form.errors[`variants.${index}.cost_price_usd`]} />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor={`variant-sell_price_usd-${index}`}>Sell Price</Label>
+                                                            <Input
+                                                                id={`variant-sell_price_usd-${index}`}
+                                                                type="number"
+                                                                step="0.01"
+                                                                value={variant.sell_price_usd}
+                                                                onChange={(e) => handleVariantChange(index, 'sell_price_usd', e.target.value)}
+                                                                placeholder="0.00"
+                                                            />
+                                                            <InputError message={form.errors[`variants.${index}.sell_price_usd`]} />
+                                                        </div>
+                                                    </div>
+                                                </TabsContent>
+                                                <TabsContent value="khr" className="space-y-4">
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor={`variant-cost_price_khr-${index}`}>Cost Price</Label>
+                                                            <Input
+                                                                id={`variant-cost_price_khr-${index}`}
+                                                                type="number"
+                                                                value={variant.cost_price_khr}
+                                                                onChange={(e) => handleVariantChange(index, 'cost_price_khr', e.target.value)}
+                                                                placeholder="0"
+                                                            />
+                                                            <InputError message={form.errors[`variants.${index}.cost_price_khr`]} />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor={`variant-sell_price_khr-${index}`}>Sell Price</Label>
+                                                            <Input
+                                                                id={`variant-sell_price_khr-${index}`}
+                                                                type="number"
+                                                                value={variant.sell_price_khr}
+                                                                onChange={(e) => handleVariantChange(index, 'sell_price_khr', e.target.value)}
+                                                                placeholder="0"
+                                                            />
+                                                            <InputError message={form.errors[`variants.${index}.sell_price_khr`]} />
+                                                        </div>
+                                                    </div>
+                                                </TabsContent>
+                                            </Tabs>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                                <InputError message={form.errors.variants} />
+                            </CardContent>
+                        </Card>
                     )}
 
-                    <div className="pt-4">
-                        <Button type="submit" className="w-full" disabled={form.processing}>
+                    <div className="flex justify-end">
+                        <Button type="submit" size="lg" disabled={form.processing}>
                             {form.processing ? 'Creating...' : 'Create Product'}
                         </Button>
                     </div>

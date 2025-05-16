@@ -17,31 +17,34 @@ class ProductResource extends JsonResource
         return [
             'id' => $this->product_id,
             'product_name' => $this->product_name,
+            'product_code' => $this->product_code,
             'category' => $this->category ? [
                 'id' => $this->category->category_id,
                 'name' => $this->category->category_name,
             ] : null,
             'type' => $this->type,
-            'barcode' => $this->barcode,
             'cost_price_usd' => $this->cost_price_usd,
             'sell_price_usd' => $this->sell_price_usd,
             'cost_price_khr' => $this->cost_price_khr,
             'sell_price_khr' => $this->sell_price_khr,
-            'variants' => $this->when($this->variants, function() {
-                return $this->variants->map(function($variant) {
+            'variant_count' => $this->variants->count(),
+            'size' => $this->size,
+            'color' => $this->color,
+            'variants' => $this->when($this->variants, function () {
+                return $this->variants->map(function ($variant) {
                     return [
                         'id' => $variant->variant_id,
                         'size' => $variant->size,
                         'color' => $variant->color,
-                        'barcode' => $variant->barcode,
+                        'variant_code' => $variant->variant_code,
                         'cost_price_usd' => $variant->cost_price_usd,
                         'sell_price_usd' => $variant->sell_price_usd,
                         'cost_price_khr' => $variant->cost_price_khr,
                         'sell_price_khr' => $variant->sell_price_khr,
-                        'images' => $variant->images->map(function($image) {
+                        'images' => $variant->images->map(function ($image) {
                             return [
                                 'id' => $image->id,
-                                'path' => $image->path,
+                                'path' => asset('storage/' . $image->path),
                                 'alt_text' => $image->alt_text,
                                 'order' => $image->order,
                             ];
@@ -49,10 +52,10 @@ class ProductResource extends JsonResource
                     ];
                 });
             }),
-            'images' => $this->images->map(function($image) {
+            'images' => $this->images->map(function ($image) {
                 return [
                     'id' => $image->id,
-                    'path' => $image->path,
+                    'path' => asset('storage/' . $image->path),
                     'alt_text' => $image->alt_text,
                     'order' => $image->order,
                 ];

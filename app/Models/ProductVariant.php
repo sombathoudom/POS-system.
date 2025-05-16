@@ -15,11 +15,12 @@ class ProductVariant extends Model
         'product_id',
         'size',
         'color',
-        'barcode',
+        'variant_code',
         'cost_price_usd',
         'sell_price_usd',
         'cost_price_khr',
         'sell_price_khr',
+
     ];
 
     public function product()

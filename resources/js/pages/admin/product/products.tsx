@@ -1,9 +1,11 @@
 import ButtonLink from '@/components/button-link';
+import Pagination from '@/components/pagination';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { Link, Pencil, PlusIcon, Trash2 } from 'lucide-react';
-
+import { Link, router } from '@inertiajs/react';
+import { Pencil, PlusIcon, Trash2 } from 'lucide-react';
 // TypeScript interfaces
 interface Product {
     id: number;
@@ -12,27 +14,33 @@ interface Product {
         id: number;
         name: string;
     };
-
     type: 'single' | 'variant';
-    barcode: string | null;
+    product_code: string;
     cost_price_usd: number | null;
     sell_price_usd: number | null;
     cost_price_khr: number | null;
     sell_price_khr: number | null;
     variant_count: number;
-    thumbnail: string | null;
+    images: {
+        id: number;
+        path: string;
+        alt_text: string;
+        order: number;
+    }[];
 }
 
 interface PaginatedProducts {
     data: Product[];
-    current_page: number;
-    last_page: number;
-    // Add other pagination fields if needed
-    per_page: number;
-    total: number;
+    meta: {
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+    };
 }
 
 export default function Products({ products }: { products: PaginatedProducts }) {
+    console.log(products);
     return (
         <AppLayout>
             <div className="space-y-6 p-4">
@@ -48,7 +56,7 @@ export default function Products({ products }: { products: PaginatedProducts }) 
                                 <TableHead>Name</TableHead>
                                 <TableHead>Category</TableHead>
                                 <TableHead>Type</TableHead>
-                                <TableHead>Barcode</TableHead>
+                                <TableHead>ProductCode</TableHead>
                                 <TableHead>Pricing (USD)</TableHead>
                                 <TableHead>Pricing (KHR)</TableHead>
                                 <TableHead>Variants</TableHead>
@@ -60,16 +68,34 @@ export default function Products({ products }: { products: PaginatedProducts }) 
                                 // Update the mapping to use products.data instead of products directly
                                 <TableRow key={product.id}>
                                     <TableCell>
-                                        {product.thumbnail ? (
-                                            <img src={product.thumbnail} alt={product.product_name} className="h-12 w-12 rounded object-cover" />
+                                        {product.images && product.images.length > 0 ? (
+                                            <div className="flex -space-x-2">
+                                                {product.images.slice(0, 3).map((image) => (
+                                                    <img
+                                                        key={image.id}
+                                                        src={image.path}
+                                                        alt={image.alt_text || product.product_name}
+                                                        className="border-background h-12 w-12 rounded-full border-2 object-cover"
+                                                    />
+                                                ))}
+                                                {product.images.length > 3 && (
+                                                    <div className="border-background bg-muted flex h-12 w-12 items-center justify-center rounded-full border-2 text-xs font-medium">
+                                                        +{product.images.length - 3}
+                                                    </div>
+                                                )}
+                                            </div>
                                         ) : (
-                                            <span className="text-gray-500">No image</span>
+                                            <span className="text-gray-500">No images</span>
                                         )}
                                     </TableCell>
                                     <TableCell>{product.product_name}</TableCell>
-                                    <TableCell>{product.category.name}</TableCell>
-                                    <TableCell>{product.type === 'single' ? 'Single' : 'Variant'}</TableCell>
-                                    <TableCell>{product.barcode || 'N/A'}</TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline">{product.category.name}</Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge>{product.type === 'single' ? 'Single' : 'Variant'}</Badge>
+                                    </TableCell>
+                                    <TableCell>{product.product_code || 'N/A'}</TableCell>
                                     <TableCell>
                                         {product.type === 'single' && product.cost_price_usd && product.sell_price_usd
                                             ? `$${product.cost_price_usd.toFixed(2)} / $${product.sell_price_usd.toFixed(2)}`
@@ -81,18 +107,18 @@ export default function Products({ products }: { products: PaginatedProducts }) 
                                             : 'N/A'}
                                     </TableCell>
                                     <TableCell>
-                                        {/* {product.type === 'variant' ? (
+                                        {product.type === 'variant' ? (
                                             <Link href={route('products.variants', product.id)} className="text-blue-600 hover:underline">
                                                 {product.variant_count} variant{product.variant_count !== 1 ? 's' : ''}
                                             </Link>
                                         ) : (
                                             'N/A'
-                                        )} */}
+                                        )}
                                     </TableCell>
                                     <TableCell className="space-x-2">
-                                        <Button variant="outline" size="sm" asChild>
+                                        <Button variant="outline" asChild>
                                             <Link href={route('products.edit', product.id)}>
-                                                <Pencil className="mr-1 h-4 w-4" />
+                                                <Pencil className="h-4 w-4" />
                                                 Edit
                                             </Link>
                                         </Button>
@@ -105,7 +131,7 @@ export default function Products({ products }: { products: PaginatedProducts }) 
                                                 }
                                             }}
                                         >
-                                            <Trash2 className="mr-1 h-4 w-4" />
+                                            <Trash2 className="h-4 w-4" />
                                             Delete
                                         </Button>
                                     </TableCell>
@@ -114,11 +140,11 @@ export default function Products({ products }: { products: PaginatedProducts }) 
                         </TableBody>
                     </Table>
                 )}
-                {/* <Pagination
-                    currentPage={1}
-                    lastPage={products.last_page}
+                <Pagination
+                    currentPage={products.meta.current_page}
+                    lastPage={products.meta.last_page}
                     onPageChange={(page) => router.get(route('products.index'), { page }, { preserveScroll: true })}
-                /> */}
+                />
             </div>
         </AppLayout>
     );

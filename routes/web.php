@@ -25,6 +25,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('category/{id}/delete', [CategoryController::class, 'destroy'])->name('category.destroy');
     Route::resource('suppliers', SupplierController::class);
     Route::resource('products', ProductController::class);
+    Route::get('products/variants/{id}', [ProductController::class, 'variants'])->name('products.variants');
 });
 
 require __DIR__ . '/settings.php';

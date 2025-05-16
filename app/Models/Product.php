@@ -15,18 +15,21 @@ class Product extends Model
         'product_name',
         'category_id',
         'type',
-        'barcode',
         'cost_price_usd',
         'sell_price_usd',
         'cost_price_khr',
         'sell_price_khr',
+        'size',
+        'color',
+        'product_code',
     ];
+
 
     public function variants()
     {
         return $this->hasMany(ProductVariant::class, 'product_id', 'product_id');
     }
-    
+
     public function images()
     {
         return $this->morphMany(ProductImage::class, 'imageable');
