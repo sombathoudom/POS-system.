@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use App\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Requests\ProductRequest;
 use App\Http\Resources\ProductResource;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\UpdateProductRequest;
 
 class ProductController extends Controller
@@ -40,7 +43,7 @@ class ProductController extends Controller
 
     public function store(ProductRequest $request)
     {
-        // dd($request);
+
         // Get validated data
         $validated = $request->validated();
 
@@ -68,7 +71,7 @@ class ProductController extends Controller
 
                     $product->images()->create([
                         'path' => $path,
-                        'alt_text' => $validated['images']['alt_text'] ?? null,
+                        'alt_text' => $validated['image']['alt_text'] ?? null,
                         'order' => 1,
                     ]);
                 }
@@ -87,25 +90,21 @@ class ProductController extends Controller
                         ]);
 
                         // Handle variant-specific images
-                        if (!empty($variantData['images'])) {
-                            $path = $variantData['images']['file']->store('variants', 'public');
+                        if (!empty($variantData['image']['file'])) {  // Changed from images to image
+                            $path = $variantData['image']['file']->store('variants', 'public');
                             $variant->images()->create([
                                 'path' => $path,
-                                'alt_text' => $variantData['images']['alt_text'] ?? null,
+                                'alt_text' => $variantData['image']['alt_text'] ?? null,  // Changed from images to image
                                 'order' => 1,
                             ]);
                         }
                     }
                 }
-
                 // Return the product with related data
-                return to_route('products.index')->with('success', 'Product created successfully');
             });
+            return to_route('products.index')->with('success', 'Product created successfully');
         } catch (\Exception $e) {
-            dd($e->getMessage());
-            // Log the error (optional, requires logging setup)
-            //Log::error('Product creation failed: ' . $e->getMessage());
-
+            Log::error('Product creation failed: ' . $e->getMessage());
             // Return error response
             return response()->json([
                 'message' => 'Failed to create product',
@@ -136,44 +135,17 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateProductRequest $request, string $id)
+    public function updates(UpdateProductRequest $request, string $id)
     {
         $validated = $request->validated();
 
         try {
-            DB::transaction(function () use ($validated, $request, $id) {
+            DB::transaction(function () use ($validated, $id) {
                 $product = Product::findOrFail($id);
                 $product->update($validated);
 
-                // Handle product images
-                if (!empty($validated['images'])) {
-                    foreach ($validated['images'] as $index => $imageData) {
-                        if (isset($imageData['id'])) {
-                            // Update existing image
-                            $image = $product->images()->findOrFail($imageData['id']);
-                            $image->update([
-                                'alt_text' => $imageData['alt_text'] ?? null,
-                                'order' => $index + 1,
-                            ]);
-                        } else if (isset($imageData['file'])) {
-                            // Add new image
-                            $path = $imageData['file']->store('products', 'public');
-                            $product->images()->create([
-                                'path' => $path,
-                                'alt_text' => $imageData['alt_text'] ?? null,
-                                'order' => $index + 1,
-                            ]);
-                        }
-                    }
-                }
-
-                // Handle variants for variant products
-                if ($validated['type'] === 'variant' && !empty($validated['variants'])) {
-                    foreach ($validated['variants'] as $variantData) {
-                        $variant = $product->variants()->findOrFail($variantData['id']);
-                        $variant->update($variantData);
-                    }
-                }
+                $this->handleProductImage($product, $validated);
+                $this->handleProductVariants($product, $validated);
             });
 
             return to_route('products.index')->with('success', 'Product updated successfully');
@@ -182,14 +154,84 @@ class ProductController extends Controller
         }
     }
 
+    private function handleProductImage(Product $product, array $validated): void
+    {
+        if ($validated['type'] !== 'single' || empty($validated['image']['file'])) {
+            return;
+        }
+
+        $this->deleteExistingImage($product->images()->first());
+
+        $path = $validated['image']['file']->store('products', 'public');
+        $product->images()->create([
+            'path' => $path,
+            'alt_text' => $validated['image']['alt_text'] ?? null,
+            'order' => 1,
+        ]);
+    }
+
+    private function handleProductVariants(Product $product, array $validated): void
+    {
+        if ($validated['type'] !== 'variant' || empty($validated['variants'])) {
+            return;
+        }
+        foreach ($validated['variants'] as $variantData) {
+            if(isset($variantData['id'])) {
+                $variant = $product->variants()->findOrFail($variantData['id']);
+                $variant->update($variantData);
+            }else{
+                $variant = $product->variants()->create($variantData);
+            }
+            $this->handleVariantImage($variant, $variantData);
+        }
+    }
+
+    private function handleVariantImage($variant, array $variantData): void
+    {
+        if (empty($variantData['image'])) {
+            return;
+        }
+
+        $this->deleteExistingImage($variant->images()->first());
+
+        $path = $variantData['image']['file']->store('variants', 'public');
+        $variant->images()->create([
+            'path' => $path,
+            'alt_text' => $variantData['image']['alt_text'] ?? null,
+            'order' => 1,
+        ]);
+    }
+
+    private function deleteExistingImage($existingImage): void
+    {
+        if (!$existingImage) {
+            return;
+        }
+
+        Storage::disk('public')->delete($existingImage->path);
+        $existingImage->delete();
+    }
+
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
     {
-        //
+        //'
+        $product = Product::findOrFail($id);
+        $product->variants()->delete();
+        $product->images()->delete();
+        $product->delete();
+        return to_route('products.index')->with('success', 'Product deleted successfully');
     }
 
+    public function destroyVariant(string $id)
+    {
+        $variant = ProductVariant::findOrFail($id);
+        $variant->images()->delete();
+        $variant->delete();
+        return to_route('products.index')->with('success', 'Variant deleted successfully');
+    }
     public function variants(string $id)
     {
         $product = Product::with(['variants', 'variants.images'])->findOrFail($id);

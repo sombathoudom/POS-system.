@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
 import { PageProps } from '@/types';
-import { useForm, usePage } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@inertiajs/react';
 import { HelpCircle, Plus, Upload, X } from 'lucide-react';
 // TypeScript interfaces
 
@@ -71,6 +71,7 @@ interface Product {
 export default function FormProducts({ product }: { product: Product }) {
     const { categories, flash } = usePage<PageProps>().props;
     // Initialize form with useForm
+    const isEdit = product?.data?.id !== undefined;
     const form = useForm<FormData>({
         product_name: product?.data?.product_name || '',
         category_id: product?.data?.category?.id ? String(product.data.category.id) : '',
@@ -95,6 +96,7 @@ export default function FormProducts({ product }: { product: Product }) {
                 sell_price_khr: variant.sell_price_khr?.toString() || '',
                 image: variant.image ?? null,
             })) || [],
+        __method: isEdit ? 'PUT' : 'POST',
     });
 
     // Handle flash messages
@@ -170,17 +172,16 @@ export default function FormProducts({ product }: { product: Product }) {
     // Handle form submission
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const hasNewFileUploads = form.data.image?.file instanceof File;
-
-        if (product?.data?.id) {
-            form.put(route('products.update', product.data.id), {
-                forceFormData: hasNewFileUploads,
+        // If product has an ID, update the product, otherwise create a new on
+        if (isEdit) {
+            form.post(route('products.updates', product.data.id), {
+                forceFormData: true,
+                preserveState: true,
+                preserveScroll: true,
                 onSuccess: () => {
                     form.reset();
                 },
-                onError: () => {
-                    console.log(form.errors);
-                },
+                onError: () => {},
             });
         } else {
             form.post(route('products.store'), {
@@ -261,6 +262,7 @@ export default function FormProducts({ product }: { product: Product }) {
                                     </TooltipProvider>
                                 </div>
                                 <Select
+                                    disabled={!!product?.data?.id}
                                     value={form.data.type}
                                     onValueChange={(value) => {
                                         form.setData('type', value as 'single' | 'variant');
@@ -658,9 +660,12 @@ export default function FormProducts({ product }: { product: Product }) {
                         </Card>
                     )}
 
-                    <div className="flex justify-end">
+                    <div className="flex gap-4">
                         <Button type="submit" size="lg" disabled={form.processing}>
                             {form.processing ? 'Creating...' : 'Create Product'}
+                        </Button>
+                        <Button variant={'secondary'} size="lg" asChild>
+                            <Link href={route('products.index')}>Cancle</Link>
                         </Button>
                     </div>
                 </form>

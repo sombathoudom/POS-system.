@@ -1,11 +1,15 @@
 import ButtonLink from '@/components/button-link';
+import DeleteDialog from '@/components/delete-dialog';
 import Pagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { Link, router } from '@inertiajs/react';
+import { PageProps } from '@/types';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Pencil, PlusIcon, Trash2 } from 'lucide-react';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 // TypeScript interfaces
 interface Product {
     id: number;
@@ -40,7 +44,15 @@ interface PaginatedProducts {
 }
 
 export default function Products({ products }: { products: PaginatedProducts }) {
-    console.log(products);
+    const { flash } = usePage<PageProps>().props;
+    const handleDelete = (productId: number) => {
+        router.delete(route('products.destroy', productId), { preserveScroll: true });
+    };
+    useEffect(() => {
+        if (flash?.success) {
+            toast.success(flash?.success);
+        }
+    }, [flash.success]);
     return (
         <AppLayout>
             <div className="space-y-6 p-4">
@@ -116,24 +128,17 @@ export default function Products({ products }: { products: PaginatedProducts }) 
                                         )}
                                     </TableCell>
                                     <TableCell className="space-x-2">
-                                        <Button variant="outline" asChild>
+                                        <Button variant={'outline'} asChild>
                                             <Link href={route('products.edit', product.id)}>
                                                 <Pencil className="h-4 w-4" />
-                                                Edit
                                             </Link>
                                         </Button>
-                                        <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            onClick={() => {
-                                                if (confirm('Are you sure you want to delete this product?')) {
-                                                    // Add delete logic here
-                                                }
-                                            }}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                            Delete
-                                        </Button>
+
+                                        <DeleteDialog onDelete={() => handleDelete(product.id)}>
+                                            <Button variant="destructive">
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </DeleteDialog>
                                     </TableCell>
                                 </TableRow>
                             ))}

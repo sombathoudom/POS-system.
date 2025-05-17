@@ -25,6 +25,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('category/{id}/delete', [CategoryController::class, 'destroy'])->name('category.destroy');
     Route::resource('suppliers', SupplierController::class);
     Route::resource('products', ProductController::class);
+    Route::post('products/{id}/update', [ProductController::class, 'updates'])->name('products.updates');
+    Route::delete('products/{id}/variant', [ProductController::class, 'destroyVariant'])->name('products.destroyVariant');
     Route::get('products/variants/{id}', [ProductController::class, 'variants'])->name('products.variants');
 });
 

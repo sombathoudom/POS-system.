@@ -1,10 +1,11 @@
+import DeleteDialog from '@/components/delete-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { Link } from '@inertiajs/react';
-import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
+import { Link, router } from '@inertiajs/react';
+import { ArrowLeft } from 'lucide-react';
 
 interface Variant {
     id: number;
@@ -35,6 +36,13 @@ interface Product {
 }
 
 export default function Variants({ product }: { product: Product }) {
+    const handleDelete = (variantId: number) => {
+        router.delete(route('products.destroyVariant', variantId), {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {},
+        });
+    };
     return (
         <AppLayout>
             <div className="container mx-auto space-y-6 p-6">
@@ -123,14 +131,7 @@ export default function Variants({ product }: { product: Product }) {
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <Button variant="ghost" size="icon">
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon">
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
+                                                <DeleteDialog onDelete={() => handleDelete(variant.id)} />
                                             </TableCell>
                                         </TableRow>
                                     ))}
