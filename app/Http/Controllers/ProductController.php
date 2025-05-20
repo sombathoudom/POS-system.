@@ -176,10 +176,10 @@ class ProductController extends Controller
             return;
         }
         foreach ($validated['variants'] as $variantData) {
-            if(isset($variantData['id'])) {
+            if (isset($variantData['id'])) {
                 $variant = $product->variants()->findOrFail($variantData['id']);
                 $variant->update($variantData);
-            }else{
+            } else {
                 $variant = $product->variants()->create($variantData);
             }
             $this->handleVariantImage($variant, $variantData);
@@ -232,11 +232,25 @@ class ProductController extends Controller
         $variant->delete();
         return to_route('products.index')->with('success', 'Variant deleted successfully');
     }
+
     public function variants(string $id)
     {
         $product = Product::with(['variants', 'variants.images'])->findOrFail($id);
         return inertia('admin/product/variants', [
             'product' => ProductResource::make($product),
         ]);
+    }
+
+    public function filterProduct(Request $request)
+    {
+
+        $products = Product::where('product_name', 'like', '%' . $request->search . '%')
+            ->orWhere('product_code', 'like', '%' . $request->search . '%')
+            ->orWhere('product_id', $request->search)
+            ->with(['images', 'variants', 'variants.images'])
+            ->limit(10)
+            ->get();
+        $products = ProductResource::collection($products);
+        return $products;
     }
 }

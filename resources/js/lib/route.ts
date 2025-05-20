@@ -21,6 +21,11 @@ const mainNavItems: NavItem[] = [
         href: '/products',
         icon: CopyPlus,
     },
+    {
+        title: 'Purchase Order',
+        href: '/purchase-order',
+        icon: CopyPlus,
+    },
 ];
 
 export { mainNavItems };
