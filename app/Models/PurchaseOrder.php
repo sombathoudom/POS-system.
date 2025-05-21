@@ -12,4 +12,15 @@ class PurchaseOrder extends Model
     {
         return $this->hasMany(PurchaseOrderItem::class);
     }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id', 'supplier_id');
+    }
+
+
+    // public function getTotalAmountAttribute()
+    // {
+    //     return $this->items->sum('total_amount');
+    // }
 }

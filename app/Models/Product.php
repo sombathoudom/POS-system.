@@ -21,6 +21,7 @@ class Product extends Model
         'sell_price_khr',
         'size',
         'color',
+        'quantity',
         'product_code',
     ];
 

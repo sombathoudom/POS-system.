@@ -12,4 +12,14 @@ class PurchaseOrderItem extends Model
     {
         return $this->belongsTo(PurchaseOrder::class);
     }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id', 'product_id');
+    }
+
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id', 'variant_id');
+    }
 }

@@ -22,6 +22,7 @@ return new class extends Migration
             $table->decimal('cost_price_khr', 10, 0);
             $table->decimal('sell_price_khr', 10, 0);
             $table->unique(['product_id', 'size', 'color']); // Ensure unique size/color per product
+            $table->integer('quantity')->default(0);
             $table->timestamps();
             $table->softDeletes();
             $table->index(['product_id', 'size', 'color']);

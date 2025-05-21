@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('purchase_order_items', function (Blueprint $table) {
             $table->id(); // Auto-incrementing primary key
-            $table->foreignId('purchase_order_id')->constrained()->onDelete('cascade'); // Foreign key to purchase_orders
-            $table->foreignId('product_id')->constrained()->onDelete('restrict'); // Foreign key to products table
-            $table->foreignId('variant_id')->nullable()->constrained()->onDelete('restrict'); // Foreign key to variants table
+            $table->foreignId('purchase_order_id')->constrained('purchase_orders', 'id')->onDelete('cascade'); // Foreign key to purchase_orders
+            $table->foreignId('product_id')->constrained('products', 'product_id')->onDelete('restrict'); // Foreign key to products table
+            $table->foreignId('variant_id')->nullable()->constrained('product_variants', 'variant_id')->onDelete('restrict'); // Foreign key to variants table
             $table->integer('quantity')->unsigned(); // Quantity of the item
             $table->decimal('unit_price', 10, 2); // Price per unit
             $table->decimal('subtotal', 10, 2)->default(0.00); // Quantity * unit_price

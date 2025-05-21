@@ -31,9 +31,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('products/{id}/variant', [ProductController::class, 'destroyVariant'])->name('products.destroyVariant');
     Route::get('products/variants/{id}', [ProductController::class, 'variants'])->name('products.variants');
     Route::get('product/search', [ProductController::class, 'filterProduct'])->name('products.search');
-    Route::get('purchase-order', [PurchaseController::class, 'index'])->name('purchase.order');
+    Route::get('purchase-order', [PurchaseController::class, 'index'])->name('purchase.index');
     Route::get('purchase-order/create', [PurchaseController::class, 'create'])->name('purchase.create');
     Route::post('purchase-order', [PurchaseController::class, 'store'])->name('purchase.store');
+    Route::get('purchase-order/{id}/show', [PurchaseController::class, 'show'])->name('purchase.show');
 });
 
 

@@ -20,6 +20,7 @@ class ProductVariant extends Model
         'sell_price_usd',
         'cost_price_khr',
         'sell_price_khr',
+        'quantity',
 
     ];
 

@@ -19,10 +19,13 @@ interface Product {
     quantity: number;
     price: number;
     product_code: string;
+    current_stock: number;
     size: string;
     color: string;
     type: string;
     cost_price_usd: number;
+    variant_id?: number; // Added: Optional variant_id for variant products
+    variant_code?: string; // Added: Optional variant_code for both single and variant products
     images: {
         id: number;
         path: string;
@@ -30,10 +33,12 @@ interface Product {
         order: number;
     }[];
     variants: {
+        // Made non-optional, assuming variants is always an array (empty for single products)
         id: number;
         size: string;
         color: string;
         cost_price_usd: number;
+        current_stock: number;
         variant_code: string;
     }[];
 }
@@ -86,9 +91,9 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
         // Transform products into the format expected by the backend
         const formattedItems = products.map((product) => ({
             product_id: product.id,
-            variant_id: product.type === 'variant' ? product.variants[0].id : undefined,
+            variant_id: product.type === 'variant' ? product.variant_id : undefined,
             product_code: product.product_code,
-            variant_code: product.type === 'single' ? product.product_code : product.variants[0].variant_code,
+            variant_code: product.variant_code || product.product_code,
             size: product.size,
             color: product.color,
             quantity: product.quantity,
@@ -103,7 +108,14 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
         post(route('purchase.store'), {
             onSuccess: () => {
                 toast.success('Purchase order created successfully');
-                // Reset form or redirect as needed
+                setProducts([]); // Reset products after successful submission
+                setData({
+                    supplier_id: '',
+                    order_date: new Date().toISOString().split('T')[0],
+                    status: 'pending',
+                    total_amount: 0,
+                    items: [],
+                });
             },
             onError: (errors) => {
                 toast.error('Failed to create purchase order');
@@ -123,39 +135,40 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
         }
     };
 
-    const isProductAlreadyAdded = (product: Product, variant: Product['variants'][0]) => {
+    const isProductAlreadyAdded = (product: Product, variant?: Product['variants'][0]) => {
         return products.some((p) => {
             if (product.type === 'single') {
                 return p.id === product.id;
             }
-            // For variant products, check if the same variant (size and color) is already added
-            return p.id === product.id && p.size === variant.size && p.color === variant.color;
+            return p.id === product.id && p.size === variant?.size && p.color === variant?.color;
         });
     };
 
-    const addProduct = (product: Product, variant: Product['variants'][0]) => {
+    const addProduct = (product: Product, variant?: Product['variants'][0]) => {
         if (isProductAlreadyAdded(product, variant)) {
-            toast.error(`This variant (${variant.size} - ${variant.color}) is already added to the table`);
+            toast.error(`This ${product.type === 'single' ? 'product' : `variant (${variant?.size} - ${variant?.color})`} is already added`);
             return;
         }
 
         const productWithVariant = {
             ...product,
-            size: variant.size,
-            color: variant.color,
-            cost_price_usd: variant.cost_price_usd,
-            variant_code: variant.variant_code,
+            size: variant ? variant.size : product.size,
+            color: variant ? variant.color : product.color,
+            cost_price_usd: variant ? variant.cost_price_usd : product.cost_price_usd,
+            variant_code: variant ? variant.variant_code : product.product_code,
+            variant_id: variant ? variant.id : undefined, // Store variant_id for variant products
             quantity: 1,
         };
+
         const updatedProducts = [...products, productWithVariant];
         setProducts(updatedProducts);
         setData(
             'items',
             updatedProducts.map((p) => ({
                 product_id: p.id,
-                variant_id: p.type === 'variant' ? p.variants[0].id : undefined,
+                variant_id: p.type === 'variant' ? p.variant_id : undefined,
                 product_code: p.product_code,
-                variant_code: p.type === 'single' ? p.product_code : p.variants[0].variant_code,
+                variant_code: p.variant_code || p.product_code,
                 size: p.size,
                 color: p.color,
                 quantity: p.quantity,
@@ -164,8 +177,8 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
             })),
         );
         updateTotalAmount(updatedProducts);
-        setSearchQuery(''); // Clear search after adding
-        setSearchResults([]); // Clear search results
+        setSearchQuery('');
+        setSearchResults([]);
         toast.success('Product added successfully');
     };
 
@@ -177,30 +190,9 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
             'items',
             updatedProducts.map((p) => ({
                 product_id: p.id,
-                variant_id: p.type === 'variant' ? p.variants[0].id : undefined,
+                variant_id: p.type === 'variant' ? p.variant_id : undefined,
                 product_code: p.product_code,
-                variant_code: p.type === 'single' ? p.product_code : p.variants[0].variant_code,
-                size: p.size,
-                color: p.color,
-                quantity: p.quantity,
-                cost_price_usd: p.cost_price_usd,
-                type: p.type,
-            })),
-        );
-        updateTotalAmount(updatedProducts);
-    };
-
-    const updateProductPrice = (index: number, price: number) => {
-        const updatedProducts = [...products];
-        updatedProducts[index].price = price;
-        setProducts(updatedProducts);
-        setData(
-            'items',
-            updatedProducts.map((p) => ({
-                product_id: p.id,
-                variant_id: p.type === 'variant' ? p.variants[0].id : undefined,
-                product_code: p.product_code,
-                variant_code: p.type === 'single' ? p.product_code : p.variants[0].variant_code,
+                variant_code: p.variant_code || p.product_code,
                 size: p.size,
                 color: p.color,
                 quantity: p.quantity,
@@ -218,9 +210,9 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
             'items',
             updatedProducts.map((p) => ({
                 product_id: p.id,
-                variant_id: p.type === 'variant' ? p.variants[0].id : undefined,
+                variant_id: p.type === 'variant' ? p.variant_id : undefined,
                 product_code: p.product_code,
-                variant_code: p.type === 'single' ? p.product_code : p.variants[0].variant_code,
+                variant_code: p.variant_code || p.product_code,
                 size: p.size,
                 color: p.color,
                 quantity: p.quantity,
@@ -338,18 +330,9 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
                                                             </div>
                                                         </div>
                                                         {products[0].type === 'single' ? (
-                                                            // Single product
                                                             <div
                                                                 className="cursor-pointer rounded border p-2 hover:bg-gray-50"
-                                                                onClick={() =>
-                                                                    addProduct(products[0], {
-                                                                        id: products[0].id,
-                                                                        size: products[0].size,
-                                                                        color: products[0].color,
-                                                                        cost_price_usd: products[0].cost_price_usd,
-                                                                        variant_code: products[0].product_code,
-                                                                    })
-                                                                }
+                                                                onClick={() => addProduct(products[0])}
                                                             >
                                                                 <div className="text-sm">
                                                                     <div className="mb-1 font-medium text-gray-900">{products[0].product_code}</div>
@@ -361,7 +344,6 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            // Variant product
                                                             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                                                                 {products[0].variants.map((variant) => (
                                                                     <div
@@ -395,6 +377,7 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead>Product</TableHead>
+                                                <TableHead className="text-yellow-500">Current Stock</TableHead>
                                                 <TableHead>Quantity</TableHead>
                                                 <TableHead>Price</TableHead>
                                                 <TableHead>Total</TableHead>
@@ -404,7 +387,7 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
                                         <TableBody>
                                             {products.map((product, index) => (
                                                 <TableRow
-                                                    key={`${product.id}-${product.type === 'single' ? product.product_code : product.variants[0].id}-${index}`}
+                                                    key={`${product.id}-${product.type === 'single' ? product.product_code : product.variant_id}-${index}`}
                                                 >
                                                     <TableCell>
                                                         <div className="flex items-center gap-2">
@@ -416,9 +399,7 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
                                                             <div>
                                                                 <div className="font-medium">{product.product_name}</div>
                                                                 <div className="text-sm text-gray-500">
-                                                                    {product.type === 'single'
-                                                                        ? product.product_code
-                                                                        : product.variants[index].variant_code}
+                                                                    {product.type === 'single' ? product.product_code : product.variant_code}
                                                                     <br />
                                                                     <div className="flex gap-2">
                                                                         <Badge>{product.size.toUpperCase()}</Badge> |
@@ -427,6 +408,11 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
                                                                 </div>
                                                             </div>
                                                         </div>
+                                                    </TableCell>
+                                                    <TableCell className="font-semibold text-yellow-500">
+                                                        {product.type === 'single'
+                                                            ? product.current_stock
+                                                            : product.variants.find((v) => v.id === product.variant_id)?.current_stock}
                                                     </TableCell>
                                                     <TableCell>
                                                         <Input

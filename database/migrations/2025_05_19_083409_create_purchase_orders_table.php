@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('purchase_orders', function (Blueprint $table) {
             $table->id(); // Auto-incrementing primary key
-            $table->foreignId('supplier_id')->constrained()->onDelete('restrict'); // Foreign key to suppliers table
+            $table->foreignId('supplier_id')->constrained('suppliers', 'supplier_id')->onDelete('restrict'); // Foreign key to suppliers table
             $table->date('order_date'); // Date of the purchase order
             $table->decimal('total_amount', 10, 2)->default(0.00); // Total amount of the purchase order
             $table->enum('status', ['pending', 'paid'])->default('pending'); // Order status
