@@ -25,8 +25,7 @@ interface Variant {
     variant_code: string;
     cost_price_usd: string;
     sell_price_usd: string;
-    cost_price_khr: string;
-    sell_price_khr: string;
+
     image?: Image | null;
     [key: string]: string | Image | null | undefined;
 }
@@ -40,8 +39,7 @@ interface FormData {
     color: string;
     cost_price_usd: string;
     sell_price_usd: string;
-    cost_price_khr: string;
-    sell_price_khr: string;
+
     image?: Image | null;
     variants: Variant[];
     [key: string]: string | Image | Variant[] | 'single' | 'variant' | null | undefined;
@@ -61,8 +59,7 @@ interface Product {
         color: string;
         cost_price_usd: string;
         sell_price_usd: string;
-        cost_price_khr: string;
-        sell_price_khr: string;
+
         image: Image;
         variants: Variant[];
     };
@@ -81,8 +78,7 @@ export default function FormProducts({ product }: { product: Product }) {
         color: product?.data?.color || '',
         cost_price_usd: product?.data?.cost_price_usd?.toString() || '',
         sell_price_usd: product?.data?.sell_price_usd?.toString() || '',
-        cost_price_khr: product?.data?.cost_price_khr?.toString() || '',
-        sell_price_khr: product?.data?.sell_price_khr?.toString() || '',
+
         image: product?.data?.image ?? null,
         variants:
             product?.data?.variants?.map((variant) => ({
@@ -92,8 +88,6 @@ export default function FormProducts({ product }: { product: Product }) {
                 variant_code: variant.variant_code || '',
                 cost_price_usd: variant.cost_price_usd?.toString() || '',
                 sell_price_usd: variant.sell_price_usd?.toString() || '',
-                cost_price_khr: variant.cost_price_khr?.toString() || '',
-                sell_price_khr: variant.sell_price_khr?.toString() || '',
                 image: variant.image ?? null,
             })) || [],
         __method: isEdit ? 'PUT' : 'POST',
@@ -119,8 +113,7 @@ export default function FormProducts({ product }: { product: Product }) {
                 variant_code: '',
                 cost_price_usd: '',
                 sell_price_usd: '',
-                cost_price_khr: '',
-                sell_price_khr: '',
+
                 image: null,
             },
         ]);
@@ -274,8 +267,6 @@ export default function FormProducts({ product }: { product: Product }) {
                                                     variant_code: '',
                                                     cost_price_usd: '',
                                                     sell_price_usd: '',
-                                                    cost_price_khr: '',
-                                                    sell_price_khr: '',
                                                     image: null,
                                                 },
                                             ]);
@@ -401,7 +392,6 @@ export default function FormProducts({ product }: { product: Product }) {
                                 <Tabs defaultValue="usd" className="w-full">
                                     <TabsList className="grid w-full grid-cols-2">
                                         <TabsTrigger value="usd">USD</TabsTrigger>
-                                        <TabsTrigger value="khr">KHR</TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="usd" className="space-y-4">
                                         <div className="grid grid-cols-2 gap-4">
@@ -428,32 +418,6 @@ export default function FormProducts({ product }: { product: Product }) {
                                                     placeholder="0.00"
                                                 />
                                                 <InputError message={form.errors.sell_price_usd} />
-                                            </div>
-                                        </div>
-                                    </TabsContent>
-                                    <TabsContent value="khr" className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="cost_price_khr">Cost Price</Label>
-                                                <Input
-                                                    id="cost_price_khr"
-                                                    type="number"
-                                                    value={form.data.cost_price_khr}
-                                                    onChange={(e) => form.setData('cost_price_khr', e.target.value)}
-                                                    placeholder="0"
-                                                />
-                                                <InputError message={form.errors.cost_price_khr} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="sell_price_khr">Sell Price</Label>
-                                                <Input
-                                                    id="sell_price_khr"
-                                                    type="number"
-                                                    value={form.data.sell_price_khr}
-                                                    onChange={(e) => form.setData('sell_price_khr', e.target.value)}
-                                                    placeholder="0"
-                                                />
-                                                <InputError message={form.errors.sell_price_khr} />
                                             </div>
                                         </div>
                                     </TabsContent>
@@ -595,7 +559,6 @@ export default function FormProducts({ product }: { product: Product }) {
                                             <Tabs defaultValue="usd" className="w-full">
                                                 <TabsList className="grid w-full grid-cols-2">
                                                     <TabsTrigger value="usd">USD</TabsTrigger>
-                                                    <TabsTrigger value="khr">KHR</TabsTrigger>
                                                 </TabsList>
                                                 <TabsContent value="usd" className="space-y-4">
                                                     <div className="grid grid-cols-2 gap-4">
@@ -622,32 +585,6 @@ export default function FormProducts({ product }: { product: Product }) {
                                                                 placeholder="0.00"
                                                             />
                                                             <InputError message={form.errors[`variants.${index}.sell_price_usd`]} />
-                                                        </div>
-                                                    </div>
-                                                </TabsContent>
-                                                <TabsContent value="khr" className="space-y-4">
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div className="space-y-2">
-                                                            <Label htmlFor={`variant-cost_price_khr-${index}`}>Cost Price</Label>
-                                                            <Input
-                                                                id={`variant-cost_price_khr-${index}`}
-                                                                type="number"
-                                                                value={variant.cost_price_khr}
-                                                                onChange={(e) => handleVariantChange(index, 'cost_price_khr', e.target.value)}
-                                                                placeholder="0"
-                                                            />
-                                                            <InputError message={form.errors[`variants.${index}.cost_price_khr`]} />
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <Label htmlFor={`variant-sell_price_khr-${index}`}>Sell Price</Label>
-                                                            <Input
-                                                                id={`variant-sell_price_khr-${index}`}
-                                                                type="number"
-                                                                value={variant.sell_price_khr}
-                                                                onChange={(e) => handleVariantChange(index, 'sell_price_khr', e.target.value)}
-                                                                placeholder="0"
-                                                            />
-                                                            <InputError message={form.errors[`variants.${index}.sell_price_khr`]} />
                                                         </div>
                                                     </div>
                                                 </TabsContent>

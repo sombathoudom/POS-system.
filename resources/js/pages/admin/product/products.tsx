@@ -22,14 +22,16 @@ interface Product {
     product_code: string;
     cost_price_usd: number | null;
     sell_price_usd: number | null;
-    cost_price_khr: number | null;
-    sell_price_khr: number | null;
+    current_stock: number;
     variant_count: number;
     images: {
         id: number;
         path: string;
         alt_text: string;
         order: number;
+    }[];
+    variants: {
+        current_stock: number;
     }[];
 }
 
@@ -70,7 +72,7 @@ export default function Products({ products }: { products: PaginatedProducts }) 
                                 <TableHead>Type</TableHead>
                                 <TableHead>ProductCode</TableHead>
                                 <TableHead>Pricing (USD)</TableHead>
-                                <TableHead>Pricing (KHR)</TableHead>
+                                <TableHead>Quantity</TableHead>
                                 <TableHead>Variants</TableHead>
                                 <TableHead>Actions</TableHead>
                             </TableRow>
@@ -114,9 +116,9 @@ export default function Products({ products }: { products: PaginatedProducts }) 
                                             : 'N/A'}
                                     </TableCell>
                                     <TableCell>
-                                        {product.type === 'single' && product.cost_price_khr && product.sell_price_khr
-                                            ? `${product.cost_price_khr.toLocaleString()} / ${product.sell_price_khr.toLocaleString()}`
-                                            : 'N/A'}
+                                        {product.type === 'single'
+                                            ? product.current_stock
+                                            : product.variants.reduce((acc, variant) => acc + variant.current_stock, 0)}
                                     </TableCell>
                                     <TableCell>
                                         {product.type === 'variant' ? (

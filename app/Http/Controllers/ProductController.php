@@ -58,8 +58,6 @@ class ProductController extends Controller
                     'product_code' => $validated['product_code'],
                     'cost_price_usd' => $validated['type'] === 'single' ? $validated['cost_price_usd'] : null,
                     'sell_price_usd' => $validated['type'] === 'single' ? $validated['sell_price_usd'] : null,
-                    'cost_price_khr' => $validated['type'] === 'single' ? $validated['cost_price_khr'] : null,
-                    'sell_price_khr' => $validated['type'] === 'single' ? $validated['sell_price_khr'] : null,
                     'size' => $validated['size'],
                     'color' => $validated['color'],
                 ]);
@@ -85,8 +83,8 @@ class ProductController extends Controller
                             'variant_code' => $variantData['variant_code'],
                             'cost_price_usd' => $variantData['cost_price_usd'],
                             'sell_price_usd' => $variantData['sell_price_usd'],
-                            'cost_price_khr' => $variantData['cost_price_khr'],
-                            'sell_price_khr' => $variantData['sell_price_khr'],
+                            'cost_price_khr' => 0,
+                            'sell_price_khr' => 0,
                         ]);
 
                         // Handle variant-specific images

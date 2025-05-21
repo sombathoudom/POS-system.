@@ -47,18 +47,18 @@ class UpdateProductRequest extends FormRequest
                 'numeric',
                 'min:0',
             ],
-            'cost_price_khr' => [
-                'required_if:type,single',
-                'nullable',
-                'numeric',
-                'min:0',
-            ],
-            'sell_price_khr' => [
-                'required_if:type,single',
-                'nullable',
-                'numeric',
-                'min:0',
-            ],
+            // 'cost_price_khr' => [
+            //     'required_if:type,single',
+            //     'nullable',
+            //     'numeric',
+            //     'min:0',
+            // ],
+            // 'sell_price_khr' => [
+            //     'required_if:type,single',
+            //     'nullable',
+            //     'numeric',
+            //     'min:0',
+            // ],
             // Product image validation - only one image
             'image' => 'nullable',
             'image.file' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -122,16 +122,16 @@ class UpdateProductRequest extends FormRequest
                 'numeric',
                 'min:0',
             ],
-            'variants.*.cost_price_khr' => [
-                'required',
-                'numeric',
-                'min:0',
-            ],
-            'variants.*.sell_price_khr' => [
-                'required',
-                'numeric',
-                'min:0',
-            ],
+            // 'variants.*.cost_price_khr' => [
+            //     'required',
+            //     'numeric',
+            //     'min:0',
+            // ],
+            // 'variants.*.sell_price_khr' => [
+            //     'required',
+            //     'numeric',
+            //     'min:0',
+            // ],
             // Variant image validation - optional single image per variant
             // 'image' => 'nullable',
             // 'image.file' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
