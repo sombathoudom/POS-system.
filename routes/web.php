@@ -2,6 +2,7 @@
 
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\POSController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PurchaseController;
@@ -35,6 +36,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('purchase-order/create', [PurchaseController::class, 'create'])->name('purchase.create');
     Route::post('purchase-order', [PurchaseController::class, 'store'])->name('purchase.store');
     Route::get('purchase-order/{id}/show', [PurchaseController::class, 'show'])->name('purchase.show');
+    Route::get('pos', [POSController::class, 'index'])->name('pos.index');
 });
 
 
