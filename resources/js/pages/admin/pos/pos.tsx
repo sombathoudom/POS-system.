@@ -1,20 +1,17 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput } from '@/components/ui/command';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
-import { useState } from 'react';
-
 import useDebounce from '@/hooks/useDebounce';
 import { router } from '@inertiajs/react';
+import axios from 'axios';
 import {
     Barcode,
-    Check,
     ChevronsUpDown,
     CreditCard,
     DollarSign,
@@ -31,6 +28,7 @@ import {
     UserPlus,
     X,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Customer {
     id: number;
@@ -87,7 +85,10 @@ interface POSProps {
     };
     categories: Category[];
 }
+
 export default function POS({ productss, categories }: POSProps) {
+    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -111,20 +112,37 @@ export default function POS({ productss, categories }: POSProps) {
     });
     const [open, setOpen] = useState(false);
 
-    // Mock customers data - replace with your actual data
-    const customers: Customer[] = [
-        { id: 0, name: 'Walk-in Customer', phone: 'N/A', location: 'N/A' },
-        { id: 1, name: 'John Doe', phone: '123-456-7890', location: 'New York' },
-        { id: 2, name: 'Jane Smith', phone: '098-765-4321', location: 'Los Angeles' },
-        // Add more customers as needed
-    ];
+    useEffect(() => {
+        const fetchCustomers = async () => {
+            try {
+                const response = await axios.get(route('customers.index'));
+                setCustomers(response.data.data);
+            } catch (error) {
+                console.error('Error fetching customers:', error);
+            } finally {
+                setIsLoadingCustomers(false);
+            }
+        };
 
-    const filteredCustomers = customers.filter(
-        (customer) =>
-            customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-            customer.phone.includes(customerSearch) ||
-            customer.location.toLowerCase().includes(customerSearch.toLowerCase()),
-    );
+        fetchCustomers();
+    }, []);
+
+    const handleCreateCustomer = async () => {
+        const response = await axios.post(route('customers.store'), {
+            name: newCustomer.name,
+            phone: newCustomer.phone,
+            address: newCustomer.location,
+        });
+        setCustomers([...customers, response.data]);
+        setShowNewCustomerModal(false);
+        setNewCustomer({ name: '', phone: '', location: '' });
+    };
+    // const filteredCustomers = customers.filter(
+    //     (customer) =>
+    //         customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+    //         customer.phone.includes(customerSearch) ||
+    //         customer.location.toLowerCase().includes(customerSearch.toLowerCase()),
+    // );
 
     // Mock products data - replace with your actual data
 
@@ -181,17 +199,6 @@ export default function POS({ productss, categories }: POSProps) {
     };
     const subtotal = cart.reduce((sum, item) => sum + getItemPrice(item) * item.quantity, 0);
     const total = subtotal + deliveryFee - discount;
-    const handleCreateCustomer = () => {
-        // Here you would typically make an API call to create the customer
-        const newCustomerWithId: Customer = {
-            id: customers.length, // This should be handled by your backend
-            ...newCustomer,
-        };
-        customers.push(newCustomerWithId);
-        setSelectedCustomer(newCustomerWithId);
-        setShowNewCustomerModal(false);
-        setNewCustomer({ name: '', phone: '', location: '' });
-    };
 
     const generateInvoice = () => {
         const newInvoice: Invoice = {
@@ -299,7 +306,7 @@ export default function POS({ productss, categories }: POSProps) {
                                     <CommandInput placeholder="Search customer..." value={customerSearch} onValueChange={setCustomerSearch} />
                                     <CommandEmpty>No customer found.</CommandEmpty>
                                     <CommandGroup>
-                                        {filteredCustomers.map((customer) => (
+                                        {/* {filteredCustomers.map((customer) => (
                                             <CommandItem
                                                 key={customer.id}
                                                 value={customer.name}
@@ -318,7 +325,7 @@ export default function POS({ productss, categories }: POSProps) {
                                                     </span>
                                                 </div>
                                             </CommandItem>
-                                        ))}
+                                        ))} */}
                                     </CommandGroup>
                                 </Command>
                             </PopoverContent>
@@ -519,7 +526,7 @@ export default function POS({ productss, categories }: POSProps) {
                         </div>
                     </div>
                     <div className="mt-6 space-y-3">
-                        <Button onClick={generateInvoice} className="w-full">
+                        <Button onClick={generateInvoice} className="w-full" disabled={cart.length === 0}>
                             <CreditCard className="mr-2" size={20} />
                             Complete Sale
                         </Button>

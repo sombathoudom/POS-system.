@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\POSController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\SupplierController;
 
@@ -37,6 +38,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('purchase-order', [PurchaseController::class, 'store'])->name('purchase.store');
     Route::get('purchase-order/{id}/show', [PurchaseController::class, 'show'])->name('purchase.show');
     Route::get('pos', [POSController::class, 'index'])->name('pos.index');
+
+    Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+    Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');
+    Route::put('customers/{id}', [CustomerController::class, 'update'])->name('customers.update');
+    Route::delete('customers/{id}', [CustomerController::class, 'destroy'])->name('customers.destroy');
 });
 
 
