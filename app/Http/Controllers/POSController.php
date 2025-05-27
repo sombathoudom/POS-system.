@@ -3,11 +3,15 @@
 namespace App\Http\Controllers;
 
 use Inertia\Inertia;
+use App\Utils\Helpers;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use App\Models\SaleTransaction;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use App\Http\Resources\PosResource;
+use App\Models\SaleTransactionDetail;
 
 class POSController extends Controller
 {
@@ -52,5 +56,78 @@ class POSController extends Controller
             'productss' => $products,
             'categories' => Category::select('category_id', 'category_name')->get()
         ]);
+    }
+
+    public function saleProducts(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $products = $request->all();
+
+            $saleTransaction = SaleTransaction::create([
+                'customer_id' => $products['customer_id'],
+                'invoice_number' => $this->generateInvoiceNumber(),
+                'user_id' => 1,
+                'currency' => 'USD',
+                'total_amount_usd' => $products['total'],
+                'total_amount_khr' => $products['total'] * 4100,
+                'delivery_fee' => $products['deliveryFee'],
+                'transaction_date' => now('Asia/Phnom_Penh')->format('Y-m-d H:i:s'),
+            ]);
+
+            $product = collect($products['products'])->map(function ($product) use ($saleTransaction) {
+                $productData = Product::find($product['id']);
+                if (!$productData) {
+                    return response()->json(['message' => 'Product not found'], 404);
+                }
+                if ($productData->quantity < $product['quantity']) {
+                    return response()->json(['message' => 'Product quantity is not enough'], 400);
+                }
+                if ($productData->variants->count() > 0) {
+                    $variant = $productData->variants->where('variant_id', $product['variant_id'])->first();
+                    if (!$variant) {
+                        return response()->json(['message' => 'Variant not found'], 404);
+                    }
+                    if ($variant->quantity < $product['quantity']) {
+                        return response()->json(['message' => 'Variant quantity is not enough'], 400);
+                    }
+                    $variant->quantity = $variant->quantity - $product['quantity'];
+                    $variant->save();
+                    SaleTransactionDetail::create([
+                        'sale_transaction_id' => $saleTransaction->transaction_id,
+                        'product_id' => $productData->product_id,
+                        'variant_id' => $variant->variant_id,
+                        'quantity' => $product['quantity'],
+                        'unit_price_usd' => $product['price'],
+                        'unit_price_khr' => $product['price'] * 4100,
+                    ]);
+                }
+
+
+                $productData->quantity = $productData->quantity - $product['quantity'];
+                $productData->save();
+                SaleTransactionDetail::create([
+                    'sale_transaction_id' => $saleTransaction->transaction_id,
+                    'product_id' => $productData->product_id,
+                    'quantity' => $product['quantity'],
+                    'unit_price_usd' => $product['price'],
+                    'unit_price_khr' => $product['price'] * 4100,
+                ]);
+                return $productData;
+            });
+            DB::commit();
+            return response()->json(['message' => 'Sale products successfully'], 200);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json(['message' => $th->getMessage()], 500);
+        }
+
+
+        return response()->json($product);
+    }
+
+    public function generateInvoiceNumber()
+    {
+        return 'INV-' . str_pad(SaleTransaction::count() + 1, 4, '0', STR_PAD_LEFT);
     }
 }

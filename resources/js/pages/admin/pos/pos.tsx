@@ -1,17 +1,19 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Command, CommandEmpty, CommandGroup, CommandInput } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import useDebounce from '@/hooks/useDebounce';
+import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
 import {
     Barcode,
+    Check,
     ChevronsUpDown,
     CreditCard,
     DollarSign,
@@ -100,7 +102,7 @@ export default function POS({ productss, categories }: POSProps) {
     const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
     const [customerSearch, setCustomerSearch] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState<Customer>({
-        id: 0,
+        id: 1,
         name: 'Walk-in Customer',
         phone: 'N/A',
         location: 'N/A',
@@ -133,19 +135,11 @@ export default function POS({ productss, categories }: POSProps) {
             phone: newCustomer.phone,
             address: newCustomer.location,
         });
+        setSelectedCustomer(response.data);
         setCustomers([...customers, response.data]);
         setShowNewCustomerModal(false);
         setNewCustomer({ name: '', phone: '', location: '' });
     };
-    // const filteredCustomers = customers.filter(
-    //     (customer) =>
-    //         customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-    //         customer.phone.includes(customerSearch) ||
-    //         customer.location.toLowerCase().includes(customerSearch.toLowerCase()),
-    // );
-
-    // Mock products data - replace with your actual data
-
     const addToCart = (product: Product) => {
         setCart((prevCart) => {
             const existingItem = prevCart.find((item) => item.key === product.key);
@@ -287,6 +281,23 @@ export default function POS({ productss, categories }: POSProps) {
         );
     };
 
+    const handleSaleProducts = () => {
+        axios
+            .post(route('pos.saleProducts'), {
+                products: cart,
+                customer_id: selectedCustomer.id,
+                discount: discount,
+                deliveryFee: deliveryFee,
+                total: total,
+            })
+            .then((response) => {
+                router.reload({ only: ['productss'] });
+                setCart([]);
+            })
+            .catch((error) => {
+                console.error('Error fetching products:', error);
+            });
+    };
     return (
         <div className="flex h-screen bg-gray-100">
             {/* Left side - Products */}
@@ -306,7 +317,7 @@ export default function POS({ productss, categories }: POSProps) {
                                     <CommandInput placeholder="Search customer..." value={customerSearch} onValueChange={setCustomerSearch} />
                                     <CommandEmpty>No customer found.</CommandEmpty>
                                     <CommandGroup>
-                                        {/* {filteredCustomers.map((customer) => (
+                                        {customers.map((customer) => (
                                             <CommandItem
                                                 key={customer.id}
                                                 value={customer.name}
@@ -325,7 +336,7 @@ export default function POS({ productss, categories }: POSProps) {
                                                     </span>
                                                 </div>
                                             </CommandItem>
-                                        ))} */}
+                                        ))}
                                     </CommandGroup>
                                 </Command>
                             </PopoverContent>
@@ -526,7 +537,7 @@ export default function POS({ productss, categories }: POSProps) {
                         </div>
                     </div>
                     <div className="mt-6 space-y-3">
-                        <Button onClick={generateInvoice} className="w-full" disabled={cart.length === 0}>
+                        <Button onClick={handleSaleProducts} className="w-full" disabled={cart.length === 0}>
                             <CreditCard className="mr-2" size={20} />
                             Complete Sale
                         </Button>
@@ -590,6 +601,7 @@ export default function POS({ productss, categories }: POSProps) {
                                 value={newCustomer.name}
                                 onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
                                 placeholder="Customer name"
+                                required
                             />
                         </div>
                         <div className="grid gap-2">
@@ -600,6 +612,7 @@ export default function POS({ productss, categories }: POSProps) {
                                 value={newCustomer.phone}
                                 onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
                                 placeholder="Phone number"
+                                required
                             />
                         </div>
                         <div className="grid gap-2">
@@ -609,6 +622,7 @@ export default function POS({ productss, categories }: POSProps) {
                                 value={newCustomer.location}
                                 onChange={(e) => setNewCustomer({ ...newCustomer, location: e.target.value })}
                                 placeholder="Customer location"
+                                required
                             />
                         </div>
                     </div>

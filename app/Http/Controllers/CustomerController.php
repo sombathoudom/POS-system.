@@ -9,11 +9,11 @@ class CustomerController extends Controller
 {
     public function index(Request $request)
     {
-        $customers = Customer::where('name', 'like', '%' . $request->search . '%')
-            ->orWhere('phone', 'like', '%' . $request->search . '%')
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
+        $customers = Customer::when($request->search, function ($query) use ($request) {
+            $query->where('name', 'like', '%' . $request->search . '%')
+                ->orWhere('phone', 'like', '%' . $request->search . '%');
+        })->latest()->paginate(10);
+
         return response()->json($customers);
     }
 
