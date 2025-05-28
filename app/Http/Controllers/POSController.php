@@ -37,9 +37,10 @@ class POSController extends Controller
                         ->orWhere('variant_code', 'like', '%' . request()->search . '%');
                 });
         })->when(request()->category, function ($query) {
-            $query->whereHas('category', function ($query) {
-                $query->where('category_id', request()->category);
-            });
+            // $query->whereHas('category', function ($query) {
+
+            // });
+            $query->where('category_id', request()->category);
         })->latest()->paginate(10);
 
         // Transform and flatten the products
