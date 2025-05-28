@@ -37,6 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('purchase-order/create', [PurchaseController::class, 'create'])->name('purchase.create');
     Route::post('purchase-order', [PurchaseController::class, 'store'])->name('purchase.store');
     Route::get('purchase-order/{id}/show', [PurchaseController::class, 'show'])->name('purchase.show');
+
     Route::get('pos', [POSController::class, 'index'])->name('pos.index');
     Route::post('pos/sale', [POSController::class, 'saleProducts'])->name('pos.saleProducts');
 

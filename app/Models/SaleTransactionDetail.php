@@ -12,4 +12,9 @@ class SaleTransactionDetail extends Model
     {
         return $this->belongsTo(SaleTransaction::class, 'sale_transaction_id', 'transaction_id');
     }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class, 'customer_id', 'id');
+    }
 }

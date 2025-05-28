@@ -1,3 +1,4 @@
+import Pagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -84,6 +85,8 @@ interface Category {
 interface POSProps {
     productss: {
         data: Product[];
+        current_page: number;
+        last_page: number;
     };
     categories: Category[];
 }
@@ -101,6 +104,7 @@ export default function POS({ productss, categories }: POSProps) {
     const [invoice, setInvoice] = useState<Invoice | null>(null);
     const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
     const [customerSearch, setCustomerSearch] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer>({
         id: 1,
         name: 'Walk-in Customer',
@@ -433,6 +437,13 @@ export default function POS({ productss, categories }: POSProps) {
                         </Card>
                     ))}
                 </div>
+                <div className="mt-4">
+                    <Pagination
+                        currentPage={productss.current_page}
+                        lastPage={productss.last_page}
+                        onPageChange={(page) => router.get(route('pos.index'), { page }, { preserveScroll: true, preserveState: true })}
+                    />
+                </div>
             </div>
 
             {/* Right side - Cart and Payment */}
@@ -516,20 +527,11 @@ export default function POS({ productss, categories }: POSProps) {
                                 value={deliveryFee}
                                 onChange={(e) => setDeliveryFee(Number(e.target.value))}
                                 className="w-24 text-right"
-                                min="0"
-                                step="0.01"
                             />
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-gray-600">Order Discount</span>
-                            <Input
-                                type="number"
-                                value={discount}
-                                onChange={(e) => setDiscount(Number(e.target.value))}
-                                className="w-24 text-right"
-                                min="0"
-                                step="0.01"
-                            />
+                            <Input type="number" value={discount} onChange={(e) => setDiscount(Number(e.target.value))} className="w-24 text-right" />
                         </div>
                         <div className="flex items-center justify-between border-t border-gray-200 pt-4">
                             <span className="text-lg font-bold text-gray-800">Total</span>

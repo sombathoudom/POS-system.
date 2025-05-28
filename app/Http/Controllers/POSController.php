@@ -93,6 +93,7 @@ class POSController extends Controller
                     }
                     $variant->quantity = $variant->quantity - $product['quantity'];
                     $variant->save();
+
                     SaleTransactionDetail::create([
                         'sale_transaction_id' => $saleTransaction->transaction_id,
                         'product_id' => $productData->product_id,
@@ -102,8 +103,6 @@ class POSController extends Controller
                         'unit_price_khr' => $product['price'] * 4100,
                     ]);
                 }
-
-
                 $productData->quantity = $productData->quantity - $product['quantity'];
                 $productData->save();
                 SaleTransactionDetail::create([
@@ -116,7 +115,18 @@ class POSController extends Controller
                 return $productData;
             });
             DB::commit();
-            return response()->json(['message' => 'Sale products successfully'], 200);
+            return response()->json([
+                'message' => 'Sale products successfully',
+                'data' => [
+                    'invoice_number' => $saleTransaction->invoice_number,
+                    'total_amount_usd' => Helpers::formatPriceToDollar($saleTransaction->total_amount_usd),
+                    'total_amount_khr' => Helpers::formatPriceToKhr($saleTransaction->total_amount_khr),
+                    'delivery_fee' => Helpers::formatPriceToDollar($saleTransaction->delivery_fee),
+                    'transaction_date' => Helpers::formatDate($saleTransaction->transaction_date),
+                    'products' => $product,
+                    'customer' => $saleTransaction->customer,
+                ]
+            ], 200);
         } catch (\Throwable $th) {
             DB::rollBack();
             return response()->json(['message' => $th->getMessage()], 500);
