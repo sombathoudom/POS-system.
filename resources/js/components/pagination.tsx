@@ -1,8 +1,5 @@
 // components/Pagination.tsx
-import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from './ui/button';
-
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from './ui/pagination';
 interface PaginationProps {
     currentPage: number;
     lastPage: number;
@@ -10,7 +7,7 @@ interface PaginationProps {
     className?: string;
 }
 
-export default function Pagination({ currentPage, lastPage, onPageChange, className }: PaginationProps) {
+export default function CustPagination({ currentPage, lastPage, onPageChange, className }: PaginationProps) {
     // Generate page numbers (show up to 5 pages, with ellipsis for large ranges)
     const getPageNumbers = () => {
         const pages: (number | string)[] = [];
@@ -58,47 +55,68 @@ export default function Pagination({ currentPage, lastPage, onPageChange, classN
     if (lastPage <= 1) return null;
 
     return (
-        <div className={cn('mt-4 flex items-center justify-center gap-2', className)}>
-            {/* Previous Button */}
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="flex items-center gap-1"
-            >
-                <ChevronLeft className="h-4 w-4" />
-                <span>Previous</span>
-            </Button>
+        <Pagination>
+            <PaginationContent>
+                <PaginationItem>
+                    <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+                </PaginationItem>
+                <PaginationItem>
+                    {getPageNumbers().map((page, index) => (
+                        <PaginationLink
+                            key={`${page}-${index}`}
+                            onClick={() => typeof page === 'number' && handlePageChange(page)}
+                            isActive={page === currentPage}
+                        >
+                            {page}
+                        </PaginationLink>
+                    ))}
+                </PaginationItem>
+                <PaginationItem>
+                    <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+                </PaginationItem>
+            </PaginationContent>
+        </Pagination>
+        // <div className={cn('mt-4 flex items-center justify-center gap-2', className)}>
+        //     {/* Previous Button */}
+        //     <Button
+        //         variant="outline"
+        //         size="sm"
+        //         onClick={() => handlePageChange(currentPage - 1)}
+        //         disabled={currentPage === 1}
+        //         className="flex items-center gap-1"
+        //     >
+        //         <ChevronLeft className="h-4 w-4" />
+        //         <span>Previous</span>
+        //     </Button>
 
-            {/* Page Numbers */}
-            {getPageNumbers().map((page, index) => (
-                <Button
-                    key={`${page}-${index}`}
-                    variant={page === currentPage ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => typeof page === 'number' && handlePageChange(page)}
-                    disabled={typeof page !== 'number'}
-                    className={cn(
-                        page === currentPage ? 'bg-primary hover:bg-primary/90 text-white' : 'text-primary',
-                        typeof page !== 'number' && 'cursor-default',
-                    )}
-                >
-                    {page}
-                </Button>
-            ))}
+        //     {/* Page Numbers */}
+        //     {getPageNumbers().map((page, index) => (
+        //         <Button
+        //             key={`${page}-${index}`}
+        //             variant={page === currentPage ? 'default' : 'outline'}
+        //             size="sm"
+        //             onClick={() => typeof page === 'number' && handlePageChange(page)}
+        //             disabled={typeof page !== 'number'}
+        //             className={cn(
+        //                 page === currentPage ? 'bg-primary hover:bg-primary/90 text-white' : 'text-primary',
+        //                 typeof page !== 'number' && 'cursor-default',
+        //             )}
+        //         >
+        //             {page}
+        //         </Button>
+        //     ))}
 
-            {/* Next Button */}
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === lastPage}
-                className="flex items-center gap-1"
-            >
-                <span>Next</span>
-                <ChevronRight className="h-4 w-4" />
-            </Button>
-        </div>
+        //     {/* Next Button */}
+        //     <Button
+        //         variant="outline"
+        //         size="sm"
+        //         onClick={() => handlePageChange(currentPage + 1)}
+        //         disabled={currentPage === lastPage}
+        //         className="flex items-center gap-1"
+        //     >
+        //         <span>Next</span>
+        //         <ChevronRight className="h-4 w-4" />
+        //     </Button>
+        // </div>
     );
 }

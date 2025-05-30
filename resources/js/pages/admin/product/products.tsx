@@ -1,6 +1,6 @@
 import ButtonLink from '@/components/button-link';
 import DeleteDialog from '@/components/delete-dialog';
-import Pagination from '@/components/pagination';
+import CustPagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -147,7 +147,7 @@ export default function Products({ products }: { products: PaginatedProducts }) 
                         </TableBody>
                     </Table>
                 )}
-                <Pagination
+                <CustPagination
                     currentPage={products.meta.current_page}
                     lastPage={products.meta.last_page}
                     onPageChange={(page) => router.get(route('products.index'), { page }, { preserveScroll: true })}

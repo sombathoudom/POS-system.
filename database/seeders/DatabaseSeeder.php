@@ -23,9 +23,11 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
-        Category::create([
-            'category_name' => 'Category 1',
-        ]);
+        for ($i = 0; $i < 6; $i++) {
+            Category::create([
+                'category_name' => 'Category 1' . $i,
+            ]);
+        }
         Supplier::create([
             'supplier_name' => 'Supplier 1',
             'contact_info' => 'Supplier 1 Contact Info',
@@ -35,10 +37,10 @@ class DatabaseSeeder extends Seeder
             'phone' => 'N/A',
             'address' => 'N/A',
         ]);
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < 100; $i++) {
             Product::create([
-                'product_name' => 'Product 1',
-                'category_id' => 1,
+                'product_name' => 'Product 1' . $i,
+                'category_id' => rand(1, 5),
                 'type' => 'single',
                 'product_code' => '1234567890' . $i,
                 'cost_price_usd' => 100,

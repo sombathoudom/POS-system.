@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { Store } from 'lucide-react';
 import { Breadcrumbs } from './breadcrumbs';
 import { Button } from './ui/button';
 import { SidebarTrigger } from './ui/sidebar';
@@ -12,7 +13,10 @@ export function AppSidebarHeader() {
                     <Breadcrumbs />
                 </div>
                 <Button variant="default" asChild>
-                    <Link href={route('pos.index')}>POS</Link>
+                    <Link href={route('pos.index')}>
+                        <Store />
+                        POS
+                    </Link>
                 </Button>
             </div>
         </header>

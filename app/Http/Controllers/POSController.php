@@ -33,8 +33,7 @@ class POSController extends Controller
             $query->where('product_name', 'like', '%' . request()->search . '%')
                 ->orWhere('product_code', 'like', '%' . request()->search . '%')
                 ->orWhereHas('variants', function ($query) {
-                    $query->where('variant_name', 'like', '%' . request()->search . '%')
-                        ->orWhere('variant_code', 'like', '%' . request()->search . '%');
+                    $query->Where('variant_code', 'like', '%' . request()->search . '%');
                 });
         })->when(request()->category, function ($query) {
             $query->where('category_id', request()->category);
@@ -48,11 +47,8 @@ class POSController extends Controller
         // Create a new collection with the flattened products
         $products->setCollection($flattenedProducts);
 
-
-
         return Inertia::render('admin/pos/pos', [
-            'productss' => $products,
-            'categories' => Category::select('category_id', 'category_name')->get()
+            'productss' => $products
         ]);
     }
 
