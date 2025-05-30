@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
 import {
+    ArrowLeftToLine,
     Barcode,
     Check,
     ChevronsUpDown,
@@ -25,6 +26,7 @@ import {
     Paintbrush,
     Plus,
     Printer,
+    RefreshCcw,
     Search,
     Shirt,
     ShoppingCart,
@@ -307,7 +309,16 @@ export default function POS({ productss, categories }: POSProps) {
             {/* Left side - Products */}
             <div className="w-2/3 overflow-y-auto p-6">
                 <div className="mb-6 space-y-4">
-                    {/* Customer Selection */}
+                    <div className="flex items-center gap-4">
+                        {/* Customer Selection */}
+                        <Button variant="outline" onClick={() => router.get(route('pos.index'))}>
+                            <RefreshCcw />
+                        </Button>
+                        <Button variant="outline" onClick={() => router.get(route('dashboard'))}>
+                            <ArrowLeftToLine />
+                            Back
+                        </Button>
+                    </div>
                     <div className="flex items-center space-x-2">
                         <Popover open={open} onOpenChange={setOpen}>
                             <PopoverTrigger asChild>
