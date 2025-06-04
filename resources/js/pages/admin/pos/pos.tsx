@@ -2,22 +2,17 @@ import CustPagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import useDebounce from '@/hooks/useDebounce';
-import { cn } from '@/lib/utils';
 import { PageProps } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import {
     ArrowLeftToLine,
     Barcode,
-    Check,
-    ChevronsUpDown,
     CreditCard,
     DollarSign,
     Edit2,
@@ -91,7 +86,6 @@ export interface POSProps {
 }
 
 export default function POS({ productss }: POSProps) {
-    console.log(productss);
     const { categories } = usePage<PageProps>().props;
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
@@ -106,6 +100,7 @@ export default function POS({ productss }: POSProps) {
     const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
     const [customerSearch, setCustomerSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalKhr, setTotalKhr] = useState(0);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer>({
         id: 1,
         name: 'Walk-in Customer',
@@ -123,7 +118,7 @@ export default function POS({ productss }: POSProps) {
         const fetchCustomers = async () => {
             try {
                 const response = await axios.get(route('customers.index'));
-                setCustomers(response.data.data);
+                setCustomers(response.data);
             } catch (error) {
                 console.error('Error fetching customers:', error);
             } finally {
@@ -214,59 +209,59 @@ export default function POS({ productss }: POSProps) {
         setShowInvoice(true);
     };
 
-    const printInvoice = () => {
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-            printWindow.document.write(`
-                <html>
-                    <head>
-                        <title>Invoice</title>
-                        <style>
-                            body { font-family: Arial, sans-serif; }
-                            .invoice { max-width: 300px; margin: 0 auto; }
-                            .header { text-align: center; margin-bottom: 20px; }
-                            .customer { margin-bottom: 20px; }
-                            .item { margin: 10px 0; }
-                            .total { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="invoice">
-                            <div class="header">
-                                <h2>INVOICE</h2>
-                                <p>${invoice?.invoiceNumber}</p>
-                                <p>${invoice?.date.toLocaleString()}</p>
-                            </div>
-                            <div class="customer">
-                                <h3>Customer Details</h3>
-                                <p>Name: ${invoice?.customer.name}</p>
-                                <p>Phone: ${invoice?.customer.phone}</p>
-                                <p>Location: ${invoice?.customer.location}</p>
-                            </div>
-                            ${invoice?.items
-                                .map(
-                                    (item) => `
-                                <div class="item">
-                                    <p>${item.name} ${item.selectedVariant ? `(${item.selectedVariant.name})` : ''}</p>
-                                    <p>${item.quantity} x $${getItemPrice(item).toFixed(2)}</p>
-                                </div>
-                            `,
-                                )
-                                .join('')}
-                            <div class="total">
-                                <p>Subtotal: $${invoice?.subtotal.toFixed(2)}</p>
-                                <p>Delivery: $${invoice?.deliveryFee.toFixed(2)}</p>
-                                <p>Discount: $${invoice?.discount.toFixed(2)}</p>
-                                <h3>Total: $${invoice?.total.toFixed(2)}</h3>
-                            </div>
-                        </div>
-                    </body>
-                </html>
-            `);
-            printWindow.document.close();
-            printWindow.print();
-        }
-    };
+    // const printInvoice = () => {
+    //     const printWindow = window.open('', '_blank');
+    //     if (printWindow) {
+    //         printWindow.document.write(`
+    //             <html>
+    //                 <head>
+    //                     <title>Invoice</title>
+    //                     <style>
+    //                         body { font-family: Arial, sans-serif; }
+    //                         .invoice { max-width: 300px; margin: 0 auto; }
+    //                         .header { text-align: center; margin-bottom: 20px; }
+    //                         .customer { margin-bottom: 20px; }
+    //                         .item { margin: 10px 0; }
+    //                         .total { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; }
+    //                     </style>
+    //                 </head>
+    //                 <body>
+    //                     <div class="invoice">
+    //                         <div class="header">
+    //                             <h2>INVOICE</h2>
+    //                             <p>${invoice?.invoiceNumber}</p>
+    //                             <p>${invoice?.date.toLocaleString()}</p>
+    //                         </div>
+    //                         <div class="customer">
+    //                             <h3>Customer Details</h3>
+    //                             <p>Name: ${invoice?.customer.name}</p>
+    //                             <p>Phone: ${invoice?.customer.phone}</p>
+    //                             <p>Location: ${invoice?.customer.location}</p>
+    //                         </div>
+    //                         ${invoice?.items
+    //                             .map(
+    //                                 (item) => `
+    //                             <div class="item">
+    //                                 <p>${item.name} ${item.selectedVariant ? `(${item.selectedVariant.name})` : ''}</p>
+    //                                 <p>${item.quantity} x $${getItemPrice(item).toFixed(2)}</p>
+    //                             </div>
+    //                         `,
+    //                             )
+    //                             .join('')}
+    //                         <div class="total">
+    //                             <p>Subtotal: $${invoice?.subtotal.toFixed(2)}</p>
+    //                             <p>Delivery: $${invoice?.deliveryFee.toFixed(2)}</p>
+    //                             <p>Discount: $${invoice?.discount.toFixed(2)}</p>
+    //                             <h3>Total: $${invoice?.total.toFixed(2)}</h3>
+    //                         </div>
+    //                     </div>
+    //                 </body>
+    //             </html>
+    //         `);
+    //         printWindow.document.close();
+    //         printWindow.print();
+    //     }
+    // };
     const searchProducts = useDebounce({
         value: searchQuery,
         delay: 100,
@@ -297,22 +292,44 @@ export default function POS({ productss }: POSProps) {
                 products: cart,
                 customer_id: selectedCustomer.id,
                 discount: discount,
+                total_khr: totalKhr,
                 deliveryFee: deliveryFee,
                 total: total,
             })
             .then((response) => {
                 router.reload({ only: ['productss'] });
                 setCart([]);
+                setDiscount(0);
                 toast.success('Sale products successfully');
             })
             .catch((error) => {
                 console.error('Error fetching products:', error);
             });
     };
+
+    const handleTotalKhr = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.value === '') {
+            setTotalKhr((subtotal + deliveryFee - discount) * 4100);
+        } else {
+            setTotalKhr(Number(e.target.value));
+        }
+    };
+
+    useEffect(() => {
+        setTotalKhr((subtotal + deliveryFee - discount) * 4100);
+    }, [subtotal, deliveryFee, discount]);
+
+    const printInvoice = () => {
+        const divContents = document.getElementById('invoice-content')?.innerHTML;
+        const a = window.open('', '', 'height=500, width=500');
+        a?.document.write(divContents ?? '');
+        a?.document.close();
+        a?.print();
+    };
     return (
         <div>
-            <Toaster richColors position="top-center" />
-            <div className="flex h-screen bg-gray-100">
+            <Toaster richColors position="top-right" />
+            <div className="flex h-screen">
                 {/* Left side - Products */}
                 <div className="w-2/3 overflow-y-auto p-6">
                     <div className="mb-6 space-y-4">
@@ -327,45 +344,18 @@ export default function POS({ productss }: POSProps) {
                             </Button>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <Popover open={open} onOpenChange={setOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
-                                        {selectedCustomer.name}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-full p-0">
-                                    <Command>
-                                        <CommandInput placeholder="Search customer..." value={customerSearch} onValueChange={setCustomerSearch} />
-                                        <CommandEmpty>No customer found.</CommandEmpty>
-                                        <CommandGroup>
-                                            {customers.map((customer) => (
-                                                <CommandItem
-                                                    key={customer.id}
-                                                    value={customer.name}
-                                                    onSelect={() => {
-                                                        setSelectedCustomer(customer);
-                                                        setOpen(false);
-                                                    }}
-                                                >
-                                                    <Check
-                                                        className={cn(
-                                                            'mr-2 h-4 w-4',
-                                                            selectedCustomer.id === customer.id ? 'opacity-100' : 'opacity-0',
-                                                        )}
-                                                    />
-                                                    <div className="flex flex-col">
-                                                        <span>{customer.name}</span>
-                                                        <span className="text-sm text-gray-500">
-                                                            {customer.phone} - {customer.location}
-                                                        </span>
-                                                    </div>
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
+                            <Select>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Customer" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {customers.map((customer) => (
+                                        <SelectItem key={customer.id} value={customer.id.toString()}>
+                                            {customer.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                             <Button onClick={() => setShowNewCustomerModal(true)} className="flex items-center space-x-2">
                                 <UserPlus size={20} />
                             </Button>
@@ -375,15 +365,19 @@ export default function POS({ productss }: POSProps) {
                         <div className="flex items-center space-x-2">
                             <div className="flex items-center space-x-2">
                                 <Filter className="text-gray-400" size={20} />
-                                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                <Select
+                                    value={selectedCustomer.id.toString()}
+                                    onValueChange={(value) =>
+                                        setSelectedCustomer(customers.find((customer) => customer.id.toString() === value) ?? customers[0])
+                                    }
+                                >
                                     <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="All" />
+                                        <SelectValue placeholder="Select Customer" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">All</SelectItem>
-                                        {categories.map((category) => (
-                                            <SelectItem key={category.category_id} value={category.category_id.toString()}>
-                                                {category.category_name}
+                                        {customers.map((customer) => (
+                                            <SelectItem key={customer.id} value={customer.id.toString()}>
+                                                {customer.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -419,7 +413,7 @@ export default function POS({ productss }: POSProps) {
                         {productss?.data.map((product) => (
                             <Card key={product.id} className="gap-4 overflow-hidden p-0">
                                 <CardHeader className="p-0">
-                                    <div className="aspect-square rounded-md bg-gray-100">
+                                    <div className="aspect-square rounded-md">
                                         {product.image ? (
                                             <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
                                         ) : (
@@ -556,6 +550,10 @@ export default function POS({ productss }: POSProps) {
                                 />
                             </div>
                             <div className="flex items-center justify-between">
+                                <span className="text-gray-600">Total KHR</span>
+                                <Input type="number" value={totalKhr} onChange={handleTotalKhr} className="w-24 text-right" />
+                            </div>
+                            <div className="flex items-center justify-between">
                                 <span className="text-gray-600">Order Discount</span>
                                 <Input
                                     type="number"
@@ -664,6 +662,88 @@ export default function POS({ productss }: POSProps) {
                                 Cancel
                             </Button>
                             <Button onClick={handleCreateCustomer}>Add Customer</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Invoice Modal */}
+                <Dialog open={true} onOpenChange={setShowInvoice}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Invoice</DialogTitle>
+                        </DialogHeader>
+
+                        <div id="invoice-content">
+                            <div className="mx-auto max-w-md space-y-2">
+                                <h1 className="text-center text-2xl font-bold">Shop Name</h1>
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm text-gray-500">Invoice Number: {invoice?.invoiceNumber}</p>
+                                    <p className="text-sm text-gray-500">Invoice Date: {invoice?.date.toLocaleString()}</p>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm text-gray-500">Customer Name: {invoice?.customer.name}</p>
+                                    <p className="text-sm text-gray-500">Customer Phone: {invoice?.customer.phone}</p>
+                                </div>
+                                <table className="w-full">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Quantity</th>
+                                            <th>Price</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-center text-sm text-gray-500">
+                                        {/* {invoice?.items.map((item) => (
+                                            <tr key={item.key}>
+                                                <td>{item.name}</td>
+                                                <td>{item.quantity}</td>
+                                                <td>{item.price}</td>
+                                                <td>{item.total}</td>
+                                            </tr>
+                                        ))} */}
+                                        <tr>
+                                            <td>Item 1</td>
+                                            <td>1</td>
+                                            <td>100</td>
+                                            <td>100</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Item 2</td>
+                                            <td>1</td>
+                                            <td>100</td>
+                                            <td>100</td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot className="mt-4 space-y-2 text-center text-sm text-gray-50">
+                                        <tr className="border-t border-gray-200">
+                                            <td colSpan={4} className="space-x-2 text-right">
+                                                <span className="text-muted-foreground text-sm">Subtotal</span>
+                                                <span className="text-muted-foreground text-sm">${subtotal.toFixed(2)}</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colSpan={4} className="space-x-2 text-right">
+                                                <span className="text-muted-foreground text-sm">Total</span>
+                                                <span className="text-muted-foreground text-sm">${total.toFixed(2)}</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colSpan={4} className="space-x-2 text-right">
+                                                <span className="text-muted-foreground text-sm">Total KHR</span>
+                                                <span className="text-muted-foreground text-sm">${totalKhr.toFixed(2)}</span>
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                                <p className="text-muted-foreground text-center text-sm">Thank you for your business!</p>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => printInvoice()}>
+                                <Printer className="mr-2" size={20} />
+                                Print Invoice
+                            </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

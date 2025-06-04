@@ -38,6 +38,14 @@ class DatabaseSeeder extends Seeder
             'address' => 'N/A',
         ]);
         for ($i = 0; $i < 100; $i++) {
+            Customer::create([
+                'name' => 'Customer ' . $i,
+                'phone' => '0123456789',
+                'address' => 'N/A',
+            ]);
+        }
+
+        for ($i = 0; $i < 100; $i++) {
             Product::create([
                 'product_name' => 'Product 1' . $i,
                 'category_id' => rand(1, 5),

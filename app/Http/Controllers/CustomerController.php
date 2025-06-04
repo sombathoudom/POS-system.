@@ -12,7 +12,7 @@ class CustomerController extends Controller
         $customers = Customer::when($request->search, function ($query) use ($request) {
             $query->where('name', 'like', '%' . $request->search . '%')
                 ->orWhere('phone', 'like', '%' . $request->search . '%');
-        })->latest()->paginate(10);
+        })->latest()->get();
 
         return response()->json($customers);
     }

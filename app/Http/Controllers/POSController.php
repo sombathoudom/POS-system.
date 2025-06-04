@@ -64,8 +64,9 @@ class POSController extends Controller
                 'user_id' => 1,
                 'currency' => 'USD',
                 'total_amount_usd' => $products['total'],
-                'total_amount_khr' => $products['total'] * 4100,
+                'total_amount_khr' => $products['total_khr'],
                 'delivery_fee' => $products['deliveryFee'],
+                'total_discount' => $products['discount'],
                 'transaction_date' => now('Asia/Phnom_Penh')->format('Y-m-d H:i:s'),
             ]);
 
