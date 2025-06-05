@@ -1,3 +1,4 @@
+import InvoiceModal from '@/components/invoice-modal';
 import CustPagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,6 @@ import {
     Package,
     Paintbrush,
     Plus,
-    Printer,
     RefreshCcw,
     Search,
     Shirt,
@@ -59,6 +59,7 @@ interface Product {
     type: 'single' | 'variant';
     current_stock: number;
     variant_id: number;
+    quantity?: number;
 }
 
 interface CartItem extends Product {
@@ -67,15 +68,14 @@ interface CartItem extends Product {
     discount: number;
 }
 
-interface Invoice {
-    items: CartItem[];
-    subtotal: number;
-    deliveryFee: number;
-    discount: number;
-    total: number;
-    date: Date;
-    invoiceNumber: string;
+export interface Invoice {
+    invoice_number: string;
+    total_amount_usd: number;
+    total_amount_khr: number;
+    delivery_fee: number;
+    transaction_date: string;
     customer: Customer;
+    products: Product[];
 }
 export interface POSProps {
     productss?: {
@@ -135,7 +135,12 @@ export default function POS({ productss }: POSProps) {
             phone: newCustomer.phone,
             address: newCustomer.location,
         });
-        setSelectedCustomer(response.data);
+        setSelectedCustomer({
+            id: response.data.id,
+            name: response.data.name,
+            phone: response.data.phone,
+            location: response.data.location,
+        });
         setCustomers([...customers, response.data]);
         setShowNewCustomerModal(false);
         setNewCustomer({ name: '', phone: '', location: '' });
@@ -193,21 +198,6 @@ export default function POS({ productss }: POSProps) {
     };
     const subtotal = cart.reduce((sum, item) => sum + getItemPrice(item) * item.quantity, 0);
     const total = subtotal + deliveryFee - discount;
-
-    const generateInvoice = () => {
-        const newInvoice: Invoice = {
-            items: cart,
-            subtotal,
-            deliveryFee,
-            discount,
-            total,
-            date: new Date(),
-            invoiceNumber: `INV-${Date.now()}`,
-            customer: selectedCustomer,
-        };
-        setInvoice(newInvoice);
-        setShowInvoice(true);
-    };
 
     // const printInvoice = () => {
     //     const printWindow = window.open('', '_blank');
@@ -300,6 +290,7 @@ export default function POS({ productss }: POSProps) {
                 router.reload({ only: ['productss'] });
                 setCart([]);
                 setDiscount(0);
+                setInvoice(response.data.data);
                 toast.success('Sale products successfully');
             })
             .catch((error) => {
@@ -319,13 +310,6 @@ export default function POS({ productss }: POSProps) {
         setTotalKhr((subtotal + deliveryFee - discount) * 4100);
     }, [subtotal, deliveryFee, discount]);
 
-    const printInvoice = () => {
-        const divContents = document.getElementById('invoice-content')?.innerHTML;
-        const a = window.open('', '', 'height=500, width=500');
-        a?.document.write(divContents ?? '');
-        a?.document.close();
-        a?.print();
-    };
     return (
         <div>
             <Toaster richColors position="top-right" />
@@ -344,7 +328,19 @@ export default function POS({ productss }: POSProps) {
                             </Button>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <Select>
+                            <Select
+                                value={selectedCustomer.id.toString()}
+                                onValueChange={(value) =>
+                                    setSelectedCustomer(
+                                        customers.find((customer) => customer.id.toString() === value) ?? {
+                                            id: 1,
+                                            name: 'Walk-in Customer',
+                                            phone: 'N/A',
+                                            location: 'N/A',
+                                        },
+                                    )
+                                }
+                            >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select Customer" />
                                 </SelectTrigger>
@@ -365,23 +361,6 @@ export default function POS({ productss }: POSProps) {
                         <div className="flex items-center space-x-2">
                             <div className="flex items-center space-x-2">
                                 <Filter className="text-gray-400" size={20} />
-                                <Select
-                                    value={selectedCustomer.id.toString()}
-                                    onValueChange={(value) =>
-                                        setSelectedCustomer(customers.find((customer) => customer.id.toString() === value) ?? customers[0])
-                                    }
-                                >
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="Select Customer" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {customers.map((customer) => (
-                                            <SelectItem key={customer.id} value={customer.id.toString()}>
-                                                {customer.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
                             </div>
                             <div className="relative">
                                 <Search className="absolute top-1/2 left-3 -translate-y-1/2 transform text-gray-400" size={20} />
@@ -572,12 +551,6 @@ export default function POS({ productss }: POSProps) {
                                 <CreditCard className="mr-2" size={20} />
                                 Complete Sale
                             </Button>
-                            {showInvoice && (
-                                <Button variant="outline" onClick={printInvoice} className="w-full">
-                                    <Printer className="mr-2" size={20} />
-                                    Print Invoice
-                                </Button>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -666,87 +639,7 @@ export default function POS({ productss }: POSProps) {
                     </DialogContent>
                 </Dialog>
 
-                {/* Invoice Modal */}
-                <Dialog open={true} onOpenChange={setShowInvoice}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Invoice</DialogTitle>
-                        </DialogHeader>
-
-                        <div id="invoice-content">
-                            <div className="mx-auto max-w-md space-y-2">
-                                <h1 className="text-center text-2xl font-bold">Shop Name</h1>
-                                <div className="flex items-center justify-between">
-                                    <p className="text-sm text-gray-500">Invoice Number: {invoice?.invoiceNumber}</p>
-                                    <p className="text-sm text-gray-500">Invoice Date: {invoice?.date.toLocaleString()}</p>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <p className="text-sm text-gray-500">Customer Name: {invoice?.customer.name}</p>
-                                    <p className="text-sm text-gray-500">Customer Phone: {invoice?.customer.phone}</p>
-                                </div>
-                                <table className="w-full">
-                                    <thead>
-                                        <tr>
-                                            <th>Item</th>
-                                            <th>Quantity</th>
-                                            <th>Price</th>
-                                            <th>Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="text-center text-sm text-gray-500">
-                                        {/* {invoice?.items.map((item) => (
-                                            <tr key={item.key}>
-                                                <td>{item.name}</td>
-                                                <td>{item.quantity}</td>
-                                                <td>{item.price}</td>
-                                                <td>{item.total}</td>
-                                            </tr>
-                                        ))} */}
-                                        <tr>
-                                            <td>Item 1</td>
-                                            <td>1</td>
-                                            <td>100</td>
-                                            <td>100</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Item 2</td>
-                                            <td>1</td>
-                                            <td>100</td>
-                                            <td>100</td>
-                                        </tr>
-                                    </tbody>
-                                    <tfoot className="mt-4 space-y-2 text-center text-sm text-gray-50">
-                                        <tr className="border-t border-gray-200">
-                                            <td colSpan={4} className="space-x-2 text-right">
-                                                <span className="text-muted-foreground text-sm">Subtotal</span>
-                                                <span className="text-muted-foreground text-sm">${subtotal.toFixed(2)}</span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td colSpan={4} className="space-x-2 text-right">
-                                                <span className="text-muted-foreground text-sm">Total</span>
-                                                <span className="text-muted-foreground text-sm">${total.toFixed(2)}</span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td colSpan={4} className="space-x-2 text-right">
-                                                <span className="text-muted-foreground text-sm">Total KHR</span>
-                                                <span className="text-muted-foreground text-sm">${totalKhr.toFixed(2)}</span>
-                                            </td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                                <p className="text-muted-foreground text-center text-sm">Thank you for your business!</p>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => printInvoice()}>
-                                <Printer className="mr-2" size={20} />
-                                Print Invoice
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                {invoice && <InvoiceModal invoice={invoice} />}
             </div>
         </div>
     );

@@ -114,11 +114,11 @@ class POSController extends Controller
                 'message' => 'Sale products successfully',
                 'data' => [
                     'invoice_number' => $saleTransaction->invoice_number,
-                    'total_amount_usd' => Helpers::formatPriceToDollar($saleTransaction->total_amount_usd),
-                    'total_amount_khr' => Helpers::formatPriceToKhr($saleTransaction->total_amount_khr),
-                    'delivery_fee' => Helpers::formatPriceToDollar($saleTransaction->delivery_fee),
+                    'total_amount_usd' => $saleTransaction->total_amount_usd,
+                    'total_amount_khr' => $saleTransaction->total_amount_khr,
+                    'delivery_fee' => $saleTransaction->delivery_fee,
                     'transaction_date' => Helpers::formatDate($saleTransaction->transaction_date),
-                    'products' => $product,
+                    'products' => $request->all()['products'],
                     'customer' => $saleTransaction->customer,
                 ]
             ], 200);
