@@ -15,8 +15,12 @@ createInertiaApp({
         root.render(<App {...props} />);
     },
     progress: {
+        delay: 0,
         color: '#4B5563',
+        showSpinner: true,
     },
+}).then(() => {
+    document.getElementById('app')?.removeAttribute('data-page');
 });
 
 // This will set light / dark mode on load...
