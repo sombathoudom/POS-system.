@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { PageProps } from '@/types';
+import formatCurrency from '@/utils/formatCurrency';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Pencil, PlusIcon, Trash2 } from 'lucide-react';
 import { useEffect } from 'react';
@@ -46,6 +47,7 @@ interface PaginatedProducts {
 }
 
 export default function Products({ products }: { products: PaginatedProducts }) {
+    console.log(products);
     const { flash } = usePage<PageProps>().props;
     const handleDelete = (productId: number) => {
         router.delete(route('products.destroy', productId), { preserveScroll: true });
@@ -112,7 +114,7 @@ export default function Products({ products }: { products: PaginatedProducts }) 
                                     <TableCell>{product.product_code || 'N/A'}</TableCell>
                                     <TableCell>
                                         {product.type === 'single' && product.cost_price_usd && product.sell_price_usd
-                                            ? `$${product.cost_price_usd.toFixed(2)} / $${product.sell_price_usd.toFixed(2)}`
+                                            ? `${formatCurrency(product.cost_price_usd, 'USD')} / ${formatCurrency(product.sell_price_usd, 'USD')}`
                                             : 'N/A'}
                                     </TableCell>
                                     <TableCell>
