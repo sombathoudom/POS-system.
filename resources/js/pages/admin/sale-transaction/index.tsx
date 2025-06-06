@@ -33,7 +33,6 @@ interface SaleTransactionResource {
 }
 
 export default function SaleTransaction({ saleTransactions }: { saleTransactions: SaleTransactionResource }) {
-    console.log(saleTransactions);
     return (
         <AppLayout>
             <div className="space-y-6 p-4">
