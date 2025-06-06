@@ -108,7 +108,7 @@ export default function Dashboard({ dailySales, monthlySales, yearlySales, profi
                                 <TableBody>
                                     {topProducts.length > 0 ? (
                                         topProducts.map((product) => (
-                                            <TableRow key={product.id}>
+                                            <TableRow key={product.name}>
                                                 <TableCell className="font-medium">{product.name}</TableCell>
                                                 <TableCell className="text-right">{product.sales}</TableCell>
                                                 <TableCell className="text-right">{formatCurrency(product.revenue)}</TableCell>

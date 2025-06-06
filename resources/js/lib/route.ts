@@ -1,5 +1,5 @@
 import { type NavItem } from '@/types';
-import { CopyPlus, LayoutGrid } from 'lucide-react';
+import { Container, CreditCard, LayoutGrid, PackageOpen, PackagePlus, Shapes, ShoppingCart } from 'lucide-react';
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
@@ -9,22 +9,32 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Categories',
         href: '/category',
-        icon: CopyPlus,
+        icon: Shapes,
     },
     {
         title: 'Suppliers',
         href: '/suppliers',
-        icon: CopyPlus,
+        icon: Container,
     },
     {
         title: 'Products',
         href: '/products',
-        icon: CopyPlus,
+        icon: PackageOpen,
     },
     {
         title: 'Purchase Order',
         href: '/purchase-order',
-        icon: CopyPlus,
+        icon: PackagePlus,
+    },
+    {
+        title: 'POS',
+        href: '/pos',
+        icon: ShoppingCart,
+    },
+    {
+        title: 'Sale Transaction',
+        href: '/sale-transaction',
+        icon: CreditCard,
     },
 ];
 

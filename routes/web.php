@@ -9,6 +9,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SaleTransactionController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -29,7 +30,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('category/{category}', [CategoryController::class, 'update'])->name('category.update');
     Route::delete('category/{id}/delete', [CategoryController::class, 'destroy'])->name('category.destroy');
     Route::resource('suppliers', SupplierController::class);
-
+    Route::get('sale-transaction', [SaleTransactionController::class, 'index'])->name('sale-transaction.index');
     Route::resource('products', ProductController::class);
     Route::post('products/{id}/update', [ProductController::class, 'updates'])->name('products.updates');
     Route::delete('products/{id}/variant', [ProductController::class, 'destroyVariant'])->name('products.destroyVariant');

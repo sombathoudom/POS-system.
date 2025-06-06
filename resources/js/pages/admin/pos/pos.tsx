@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import useDebounce from '@/hooks/useDebounce';
 import { PageProps } from '@/types';
-import { router, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import {
     ArrowLeftToLine,
@@ -314,6 +314,7 @@ export default function POS({ productss }: POSProps) {
 
     return (
         <div>
+            <Head title="POS" />
             <Toaster richColors position="top-right" />
             <div className="flex h-screen">
                 {/* Left side - Products */}
@@ -324,7 +325,7 @@ export default function POS({ productss }: POSProps) {
                             <Button variant="outline" onClick={() => router.get(route('pos.index'))}>
                                 <RefreshCcw />
                             </Button>
-                            <Button variant="outline" onClick={() => router.get(route('dashboard'))}>
+                            <Button variant="outline" onClick={() => router.get(route('dashboard.index'))}>
                                 <ArrowLeftToLine />
                                 Back
                             </Button>
