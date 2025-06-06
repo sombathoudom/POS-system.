@@ -62,6 +62,7 @@ class POSController extends Controller
                 'customer_id' => $products['customer_id'],
                 'invoice_number' => $this->generateInvoiceNumber(),
                 'user_id' => 1,
+                'status' => $products['status'],
                 'currency' => 'USD',
                 'total_amount_usd' => $products['total'],
                 'total_amount_khr' => $products['total_khr'],

@@ -36,7 +36,7 @@ interface Customer {
     id: number;
     name: string;
     phone: string;
-    location: string;
+    address: string;
 }
 
 interface Variant {
@@ -101,16 +101,17 @@ export default function POS({ productss }: POSProps) {
     const [customerSearch, setCustomerSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalKhr, setTotalKhr] = useState(0);
+    const [status, setStatus] = useState('unpaid');
     const [selectedCustomer, setSelectedCustomer] = useState<Customer>({
         id: 1,
         name: 'Walk-in Customer',
         phone: 'N/A',
-        location: 'N/A',
+        address: 'N/A',
     });
     const [newCustomer, setNewCustomer] = useState<Omit<Customer, 'id'>>({
         name: '',
         phone: '',
-        location: '',
+        address: '',
     });
     const [open, setOpen] = useState(false);
 
@@ -133,17 +134,17 @@ export default function POS({ productss }: POSProps) {
         const response = await axios.post(route('customers.store'), {
             name: newCustomer.name,
             phone: newCustomer.phone,
-            address: newCustomer.location,
+            address: newCustomer.address,
         });
         setSelectedCustomer({
             id: response.data.id,
             name: response.data.name,
             phone: response.data.phone,
-            location: response.data.location,
+            address: response.data.address,
         });
         setCustomers([...customers, response.data]);
         setShowNewCustomerModal(false);
-        setNewCustomer({ name: '', phone: '', location: '' });
+        setNewCustomer({ name: '', phone: '', address: '' });
     };
     const addToCart = (product: Product) => {
         setCart((prevCart) => {
@@ -281,6 +282,7 @@ export default function POS({ productss }: POSProps) {
             .post(route('pos.saleProducts'), {
                 products: cart,
                 customer_id: selectedCustomer.id,
+                status: status,
                 discount: discount,
                 total_khr: totalKhr,
                 deliveryFee: deliveryFee,
@@ -336,7 +338,7 @@ export default function POS({ productss }: POSProps) {
                                             id: 1,
                                             name: 'Walk-in Customer',
                                             phone: 'N/A',
-                                            location: 'N/A',
+                                            address: 'N/A',
                                         },
                                     )
                                 }
@@ -361,6 +363,25 @@ export default function POS({ productss }: POSProps) {
                         <div className="flex items-center space-x-2">
                             <div className="flex items-center space-x-2">
                                 <Filter className="text-gray-400" size={20} />
+                                <Select>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all" onClick={() => setSelectedCategory('')}>
+                                            All
+                                        </SelectItem>
+                                        {categories.map((category) => (
+                                            <SelectItem
+                                                key={category.category_id.toString()}
+                                                value={category.category_id.toString()}
+                                                onClick={() => setSelectedCategory(category.category_id.toString())}
+                                            >
+                                                {category.category_name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <div className="relative">
                                 <Search className="absolute top-1/2 left-3 -translate-y-1/2 transform text-gray-400" size={20} />
@@ -388,7 +409,7 @@ export default function POS({ productss }: POSProps) {
                         {/* Category Filter */}
                     </div>
 
-                    <div className="grid grid-cols-5 gap-3">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5">
                         {productss?.data.map((product) => (
                             <Card key={product.id} className="gap-4 overflow-hidden p-0">
                                 <CardHeader className="p-0">
@@ -514,6 +535,19 @@ export default function POS({ productss }: POSProps) {
 
                     <div className="border-t border-gray-200 p-6">
                         <div className="space-y-4">
+                            <div className="flex items-center justify-between gap-4">
+                                <span className="text-gray-600">Status</span>
+                                <Select value={status} onValueChange={(value) => setStatus(value)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="paid">Paid</SelectItem>
+                                        <SelectItem value="unpaid">Unpaid</SelectItem>
+                                        <SelectItem value="partial_paid">Partial Paid</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-gray-600">Subtotal</span>
                                 <span className="font-semibold">${subtotal.toFixed(2)}</span>
@@ -623,8 +657,8 @@ export default function POS({ productss }: POSProps) {
                                 <Label htmlFor="location">Location</Label>
                                 <Input
                                     id="location"
-                                    value={newCustomer.location}
-                                    onChange={(e) => setNewCustomer({ ...newCustomer, location: e.target.value })}
+                                    value={newCustomer.address}
+                                    onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
                                     placeholder="Customer location"
                                     required
                                 />
@@ -639,7 +673,7 @@ export default function POS({ productss }: POSProps) {
                     </DialogContent>
                 </Dialog>
 
-                {invoice && <InvoiceModal invoice={invoice} />}
+                {invoice && <InvoiceModal invoice={invoice} onClose={() => setInvoice(null)} />}
             </div>
         </div>
     );
