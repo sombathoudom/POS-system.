@@ -68,7 +68,10 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
                                     )}
                                 </TableCell>
                                 <TableCell>
-                                    <Button>View</Button>
+                                    <div className="flex gap-2">
+                                        <Button>View</Button>
+                                        <Button variant="success">Mark as Paid</Button>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}

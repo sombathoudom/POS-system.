@@ -1,5 +1,5 @@
 import { type NavItem } from '@/types';
-import { Container, CreditCard, LayoutGrid, PackageOpen, PackagePlus, Shapes, ShoppingCart } from 'lucide-react';
+import { Container, CreditCard, DatabaseZap, LayoutGrid, PackageOpen, PackagePlus, Shapes, ShoppingCart } from 'lucide-react';
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
@@ -35,6 +35,11 @@ const mainNavItems: NavItem[] = [
         title: 'Sale Transaction',
         href: '/sale-transaction',
         icon: CreditCard,
+    },
+    {
+        title: 'Expense',
+        href: '/expsense',
+        icon: DatabaseZap,
     },
 ];
 

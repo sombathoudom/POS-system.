@@ -6,6 +6,7 @@ use App\Http\Controllers\POSController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\DashboardController;
@@ -40,6 +41,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('purchase-order/create', [PurchaseController::class, 'create'])->name('purchase.create');
     Route::post('purchase-order', [PurchaseController::class, 'store'])->name('purchase.store');
     Route::get('purchase-order/{id}/show', [PurchaseController::class, 'show'])->name('purchase.show');
+
+    Route::get('expsense', [ExpenseController::class, 'index'])->name('expsense.index');
+    Route::get('expsense/create', [ExpenseController::class, 'create'])->name('expsense.create');
+    Route::post('expsense', [ExpenseController::class, 'store'])->name('expsense.store');
+    Route::get('expsense/{id}/edit', [ExpenseController::class, 'edit'])->name('expsense.edit');
+    Route::put('expsense/{id}', [ExpenseController::class, 'update'])->name('expsense.update');
+    Route::delete('expsense/{id}', [ExpenseController::class, 'destroy'])->name('expsense.destroy');
 
     Route::get('pos', [POSController::class, 'index'])->name('pos.index');
     Route::post('pos/sale', [POSController::class, 'saleProducts'])->name('pos.saleProducts');
