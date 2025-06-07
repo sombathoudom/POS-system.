@@ -320,7 +320,7 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
                                                     <div key={productCode} className="rounded-md border p-4">
                                                         <div className="mb-2 flex items-center gap-4">
                                                             <img
-                                                                src={products[0].images[0].path}
+                                                                src={products[0]?.images[0]?.path}
                                                                 alt={products[0].product_name}
                                                                 className="h-16 w-16 rounded object-cover"
                                                             />
@@ -356,8 +356,8 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
                                                                                 {variant.variant_code}
                                                                             </div>
                                                                             <div className="text-gray-600">
-                                                                                <div>Size: {variant.size}</div>
-                                                                                <div>Color: {variant.color}</div>
+                                                                                <div>Size: {variant?.size}</div>
+                                                                                <div>Color: {variant?.color}</div>
                                                                                 <div>Price: ${variant.cost_price_usd}</div>
                                                                             </div>
                                                                         </div>
@@ -392,7 +392,7 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
                                                     <TableCell>
                                                         <div className="flex items-center gap-2">
                                                             <img
-                                                                src={product.images[0].path}
+                                                                src={product?.images[0]?.path}
                                                                 alt={product.product_name}
                                                                 className="h-10 w-10 rounded object-cover"
                                                             />
@@ -402,8 +402,8 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
                                                                     {product.type === 'single' ? product.product_code : product.variant_code}
                                                                     <br />
                                                                     <div className="flex gap-2">
-                                                                        <Badge>{product.size.toUpperCase()}</Badge> |
-                                                                        <Badge variant="outline">{product.color.toUpperCase()}</Badge>
+                                                                        <Badge>{product?.size?.toUpperCase()}</Badge> |
+                                                                        <Badge variant="outline">{product?.color?.toUpperCase()}</Badge>
                                                                     </div>
                                                                 </div>
                                                             </div>
