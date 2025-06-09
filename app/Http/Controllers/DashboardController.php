@@ -14,14 +14,27 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $date = $request->date ?? now()->today();
+        // dd($request->all());
+        $from = $request->date['from'] ?? now()->startOfDay();
+        $to = $request->date['to'] ?? now()->endOfDay();
 
-        $dailySales = SaleTransaction::where('status', 'paid')->whereDate('created_at', now()->today())->sum('total_amount_usd');
-        $monthlySales = SaleTransaction::where('status', 'paid')->whereMonth('created_at', now()->month)->sum('total_amount_usd');
-        $yearlySales = SaleTransaction::where('status', 'paid')->whereYear('created_at', now()->year)->sum('total_amount_usd');
+        $dailySales = SaleTransaction::where('status', 'paid')->when($from && $to, function ($query) use ($from, $to) {
+            return $query->whereBetween('created_at', [$from, $to]);
+        })->sum('total_amount_usd');
+
+        $monthlySales = SaleTransaction::where('status', 'paid')->when($from && $to, function ($query) use ($from, $to) {
+            return $query->whereBetween('created_at', [$from, $to]);
+        })->sum('total_amount_usd');
+
+        $yearlySales = SaleTransaction::where('status', 'paid')->when($from && $to, function ($query) use ($from, $to) {
+            return $query->whereBetween('created_at', [$from, $to]);
+        })->sum('total_amount_usd');
 
         $unpaidSales = SaleTransaction::where('status', 'unpaid')
             ->selectRaw('SUM(total_amount_usd) as total_amount, COUNT(*) as count')
+            ->when($from && $to, function ($query) use ($from, $to) {
+                return $query->whereBetween('created_at', [$from, $to]);
+            })
             ->first();
 
         $topProducts = SaleTransactionDetail::with('product')
@@ -31,7 +44,13 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        $profitOrLoss = SaleTransaction::where('status', 'paid')->whereDate('created_at', now()->today())->sum('total_amount_usd') - PurchaseOrder::whereDate('created_at', now()->today())->sum('total_amount') - Expense::whereDate('expense_date', now()->today())->sum('amount');
+        $profitOrLoss = SaleTransaction::where('status', 'paid')->when($from && $to, function ($query) use ($from, $to) {
+            return $query->whereBetween('created_at', [$from, $to]);
+        })->sum('total_amount_usd') - PurchaseOrder::when($from && $to, function ($query) use ($from, $to) {
+            return $query->whereBetween('created_at', [$from, $to]);
+        })->sum('total_amount') - Expense::when($from && $to, function ($query) use ($from, $to) {
+            return $query->whereBetween('expense_date', [$from, $to]);
+        })->sum('amount');
 
         return Inertia::render('dashboard', [
             'dailySales' => $dailySales,

@@ -1,9 +1,13 @@
+import { CalendarDatePicker } from '@/components/calendar-date-picker';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { formatCurrency } from '@/lib/utils';
-import { Head } from '@inertiajs/react';
-import { BarChart2, DollarSign, TrendingUp } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { BarChart2, DollarSign, SearchIcon, TrendingUp } from 'lucide-react';
+import { useState } from 'react';
+
 // Define the shape of a product for topProducts
 interface Product {
     id: number;
@@ -33,10 +37,24 @@ export default function Dashboard({
     unpaidSales,
     unpaidSalesCount,
 }: DashboardProps) {
+    const [selectedDateRange, setSelectedDateRange] = useState({
+        from: new Date(new Date().getFullYear(), 0, 1),
+        to: new Date(),
+    });
+
+    const handleSearch = () => {
+        router.get(route('dashboard.index'), { date: selectedDateRange }, { preserveScroll: true });
+    };
     return (
         <AppLayout>
             <Head title="Dashboard" />
-            <div className="flex justify-end"> </div>
+            <div className="flex justify-center gap-2 p-4">
+                <CalendarDatePicker date={selectedDateRange} onDateSelect={setSelectedDateRange} />
+                <Button variant="outline" onClick={handleSearch}>
+                    <SearchIcon className="h-4 w-4" />
+                    Search
+                </Button>
+            </div>
             <div className="space-y-6 p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
