@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
+import { formatCurrency } from '@/lib/utils';
 import { Head } from '@inertiajs/react';
 import { BarChart2, DollarSign, TrendingUp } from 'lucide-react';
-
 // Define the shape of a product for topProducts
 interface Product {
     id: number;
@@ -23,13 +23,6 @@ interface DashboardProps {
 }
 
 // Utility function to format currency
-const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-    }).format(amount);
-};
 
 export default function Dashboard({
     dailySales,
