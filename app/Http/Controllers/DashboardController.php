@@ -17,6 +17,9 @@ class DashboardController extends Controller
         $monthlySales = SaleTransaction::where('status', 'paid')->whereMonth('created_at', now()->month)->sum('total_amount_usd');
         $yearlySales = SaleTransaction::where('status', 'paid')->whereYear('created_at', now()->year)->sum('total_amount_usd');
 
+        $unpaidSales = SaleTransaction::where('status', 'unpaid')
+            ->selectRaw('SUM(total_amount_usd) as total_amount, COUNT(*) as count')
+            ->first();
 
         $topProducts = SaleTransactionDetail::with('product')
             ->select('product_id', DB::raw('SUM(quantity) as total_quantity'))
@@ -32,6 +35,8 @@ class DashboardController extends Controller
             'monthlySales' => $monthlySales,
             'yearlySales' => $yearlySales,
             'profitOrLoss' => $profitOrLoss,
+            'unpaidSales' => $unpaidSales->total_amount,
+            'unpaidSalesCount' => $unpaidSales->count,
             'topProducts' => $topProducts->map(function ($product) {
                 return [
                     'name' => $product->product->product_name,

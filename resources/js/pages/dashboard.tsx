@@ -18,6 +18,8 @@ interface DashboardProps {
     yearlySales: number;
     profitOrLoss: number;
     topProducts: Product[];
+    unpaidSales: number;
+    unpaidSalesCount: number;
 }
 
 // Utility function to format currency
@@ -29,7 +31,15 @@ const formatCurrency = (amount: number): string => {
     }).format(amount);
 };
 
-export default function Dashboard({ dailySales, monthlySales, yearlySales, profitOrLoss, topProducts }: DashboardProps) {
+export default function Dashboard({
+    dailySales,
+    monthlySales,
+    yearlySales,
+    profitOrLoss,
+    topProducts,
+    unpaidSales,
+    unpaidSalesCount,
+}: DashboardProps) {
     return (
         <AppLayout>
             <Head title="Dashboard" />
@@ -88,6 +98,16 @@ export default function Dashboard({ dailySales, monthlySales, yearlySales, profi
                         <CardContent>
                             <div className="text-2xl font-bold text-gray-800">{formatCurrency(yearlySales)}</div>
                             <p className="mt-1 text-xs text-gray-500">Sales for {new Date().getFullYear()}</p>
+                        </CardContent>
+                    </Card>
+                    <Card className="shadow-md transition-shadow hover:shadow-lg">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-600">Unpaid Sales</CardTitle>
+                            <DollarSign className="h-5 w-5 text-red-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-gray-800">{formatCurrency(unpaidSales)}</div>
+                            <p className="mt-1 text-xs text-gray-500">Unpaid sales for {new Date().toLocaleDateString()}</p>
                         </CardContent>
                     </Card>
                 </div>
