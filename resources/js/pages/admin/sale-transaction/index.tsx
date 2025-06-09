@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import AppLayout from '@/layouts/app-layout';
 import { PageProps } from '@/types';
 import formatCurrency from '@/utils/formatCurrency';
-
 import { Head, router, usePage } from '@inertiajs/react';
 import { SearchIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -42,6 +41,8 @@ interface SaleTransactionResource {
 export default function SaleTransaction({ saleTransactions }: { saleTransactions: SaleTransactionResource }) {
     const { flash } = usePage<PageProps>().props;
     const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+
     useEffect(() => {
         if (flash.success) {
             toast.success(flash.success);

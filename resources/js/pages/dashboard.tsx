@@ -36,7 +36,7 @@ export default function Dashboard({
     return (
         <AppLayout>
             <Head title="Dashboard" />
-
+            <div className="flex justify-end"> </div>
             <div className="space-y-6 p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">

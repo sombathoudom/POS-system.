@@ -2,17 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
+use App\Models\Expense;
+use Illuminate\Http\Request;
 use App\Models\PurchaseOrder;
 use App\Models\SaleTransaction;
-use App\Models\SaleTransactionDetail;
-use Inertia\Inertia;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\SaleTransactionDetail;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $date = $request->date ?? now()->today();
+
         $dailySales = SaleTransaction::where('status', 'paid')->whereDate('created_at', now()->today())->sum('total_amount_usd');
         $monthlySales = SaleTransaction::where('status', 'paid')->whereMonth('created_at', now()->month)->sum('total_amount_usd');
         $yearlySales = SaleTransaction::where('status', 'paid')->whereYear('created_at', now()->year)->sum('total_amount_usd');
@@ -28,7 +31,7 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        $profitOrLoss = SaleTransaction::whereDate('created_at', now()->today())->sum('total_amount_usd') - PurchaseOrder::whereDate('created_at', now()->today())->sum('total_amount');
+        $profitOrLoss = SaleTransaction::where('status', 'paid')->whereDate('created_at', now()->today())->sum('total_amount_usd') - PurchaseOrder::whereDate('created_at', now()->today())->sum('total_amount') - Expense::whereDate('expense_date', now()->today())->sum('amount');
 
         return Inertia::render('dashboard', [
             'dailySales' => $dailySales,
