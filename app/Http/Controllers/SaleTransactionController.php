@@ -9,9 +9,15 @@ use Illuminate\Support\Facades\DB;
 
 class SaleTransactionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $saleTransactions = SaleTransaction::with('customer')->latest()->paginate(10);
+        $saleTransactions = SaleTransaction::with('customer')->when($request->search, function ($query, $search) {
+            $query->whereHas('customer', function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%');
+            });
+        })->when($request->status, function ($query, $status) {
+            $query->where('status', $status);
+        })->latest()->paginate(10);
 
         return Inertia::render('admin/sale-transaction/index', [
             'saleTransactions' => $saleTransactions,

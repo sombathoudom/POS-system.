@@ -2,12 +2,16 @@ import CustPagination from '@/components/pagination';
 import TransactionBadgeStatus from '@/components/transaction-badge-status';
 import TransactionStatusButtons from '@/components/transaction-status-button';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { PageProps } from '@/types';
 import formatCurrency from '@/utils/formatCurrency';
-import { router, usePage } from '@inertiajs/react';
-import { useEffect } from 'react';
+
+import { Head, router, usePage } from '@inertiajs/react';
+import { SearchIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface SaleTransaction {
@@ -37,7 +41,7 @@ interface SaleTransactionResource {
 
 export default function SaleTransaction({ saleTransactions }: { saleTransactions: SaleTransactionResource }) {
     const { flash } = usePage<PageProps>().props;
-
+    const [search, setSearch] = useState('');
     useEffect(() => {
         if (flash.success) {
             toast.success(flash.success);
@@ -45,6 +49,30 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
     }, [flash]);
     return (
         <AppLayout>
+            <Head title="Sale Transaction" />
+            <div className="flex justify-between p-4">
+                <div className="flex items-center gap-2">
+                    <Select onValueChange={(value) => router.get(route('sale-transaction.index'), { status: value }, { preserveScroll: true })}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="unpaid">Unpaid</SelectItem>
+                            <SelectItem value="paid">Paid</SelectItem>
+                            <SelectItem value="partial_paid">Partial Paid</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Input type="text" placeholder="Search Customer" value={search} onChange={(e) => setSearch(e.target.value)} />
+                    <Button
+                        variant="outline"
+                        onClick={() => router.get(route('sale-transaction.index'), { search: search }, { preserveScroll: true })}
+                    >
+                        <SearchIcon className="h-4 w-4" />
+                        Search
+                    </Button>
+                </div>
+            </div>
             <div className="space-y-6 p-4">
                 <Table>
                     <TableHeader>
