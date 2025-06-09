@@ -48,6 +48,9 @@ class DatabaseSeeder extends Seeder
             'address' => 'N/A',
         ]);
 
+        $this->call([
+            ExpenseSeeder::class,
+        ]);
 
         // for ($i = 0; $i < 100; $i++) {
         //     Product::create([

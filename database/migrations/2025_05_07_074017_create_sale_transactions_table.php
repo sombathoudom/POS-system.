@@ -25,7 +25,7 @@ return new class extends Migration
             $table->decimal('total_discount', 8, 2)->default(0);
             $table->decimal('delivery_fee', 8, 2)->default(0);
             $table->dateTime('transaction_date');
-            $table->enum('status', ['paid', 'unpaid', 'partial_paid'])->default('unpaid');
+            $table->enum('status', ['paid', 'unpaid', 'partial_paid', 'cancelled'])->default('unpaid');
             $table->timestamps();
         });
         Schema::table('sale_transactions', function (Blueprint $table) {

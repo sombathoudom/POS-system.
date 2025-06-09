@@ -13,9 +13,9 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $dailySales = SaleTransaction::whereDate('created_at', now()->today())->sum('total_amount_usd');
-        $monthlySales = SaleTransaction::whereMonth('created_at', now()->month)->sum('total_amount_usd');
-        $yearlySales = SaleTransaction::whereYear('created_at', now()->year)->sum('total_amount_usd');
+        $dailySales = SaleTransaction::where('status', 'paid')->whereDate('created_at', now()->today())->sum('total_amount_usd');
+        $monthlySales = SaleTransaction::where('status', 'paid')->whereMonth('created_at', now()->month)->sum('total_amount_usd');
+        $yearlySales = SaleTransaction::where('status', 'paid')->whereYear('created_at', now()->year)->sum('total_amount_usd');
 
 
         $topProducts = SaleTransactionDetail::with('product')

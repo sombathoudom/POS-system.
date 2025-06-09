@@ -32,6 +32,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('category/{id}/delete', [CategoryController::class, 'destroy'])->name('category.destroy');
     Route::resource('suppliers', SupplierController::class);
     Route::get('sale-transaction', [SaleTransactionController::class, 'index'])->name('sale-transaction.index');
+    Route::post('sale-transaction/{id}/mark-as-paid', [SaleTransactionController::class, 'markAsPaid'])->name('sale-transaction.markAsPaid');
+    Route::post('sale-transaction/{id}/mark-as-cancelled', [SaleTransactionController::class, 'markAsCancelled'])->name('sale-transaction.markAsCancelled');
     Route::resource('products', ProductController::class);
     Route::post('products/{id}/update', [ProductController::class, 'updates'])->name('products.updates');
     Route::delete('products/{id}/variant', [ProductController::class, 'destroyVariant'])->name('products.destroyVariant');

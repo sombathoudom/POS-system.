@@ -1,11 +1,14 @@
 import CustPagination from '@/components/pagination';
-
-import { Badge } from '@/components/ui/badge';
+import TransactionBadgeStatus from '@/components/transaction-badge-status';
+import TransactionStatusButtons from '@/components/transaction-status-button';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
+import { PageProps } from '@/types';
 import formatCurrency from '@/utils/formatCurrency';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 interface SaleTransaction {
     transaction_id: number;
@@ -16,7 +19,7 @@ interface SaleTransaction {
     transaction_date: string;
     invoice_number: string;
     total_discount: number;
-    status: string;
+    status: 'unpaid' | 'paid' | 'partial_paid' | 'cancelled' | string;
     customer: Customer;
 }
 interface Customer {
@@ -33,6 +36,13 @@ interface SaleTransactionResource {
 }
 
 export default function SaleTransaction({ saleTransactions }: { saleTransactions: SaleTransactionResource }) {
+    const { flash } = usePage<PageProps>().props;
+
+    useEffect(() => {
+        if (flash.success) {
+            toast.success(flash.success);
+        }
+    }, [flash]);
     return (
         <AppLayout>
             <div className="space-y-6 p-4">
@@ -57,20 +67,12 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
                                 <TableCell>{formatCurrency(saleTransaction.total_amount_khr, 'KHR')}</TableCell>
                                 <TableCell>{formatCurrency(saleTransaction.total_amount_usd, 'USD')}</TableCell>
                                 <TableCell>
-                                    {saleTransaction.status === 'unpaid' ? (
-                                        <Badge variant="outline" className="bg-yellow-500 text-white">
-                                            {saleTransaction.status}
-                                        </Badge>
-                                    ) : (
-                                        <Badge variant="outline" className="bg-green-500 text-white">
-                                            {saleTransaction.status}
-                                        </Badge>
-                                    )}
+                                    <TransactionBadgeStatus status={saleTransaction.status} />
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex gap-2">
                                         <Button>View</Button>
-                                        <Button variant="success">Mark as Paid</Button>
+                                        <TransactionStatusButtons saleTransaction={saleTransaction} />
                                     </div>
                                 </TableCell>
                             </TableRow>
