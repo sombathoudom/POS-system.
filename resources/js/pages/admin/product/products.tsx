@@ -47,7 +47,6 @@ interface PaginatedProducts {
 }
 
 export default function Products({ products }: { products: PaginatedProducts }) {
-    console.log(products);
     const { flash } = usePage<PageProps>().props;
     const handleDelete = (productId: number) => {
         router.delete(route('products.destroy', productId), { preserveScroll: true });

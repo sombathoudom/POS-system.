@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { router, useForm } from '@inertiajs/react';
 import { toast } from 'sonner';
-import { Supplier } from './suppliers';
+import { type Supplier } from './suppliers';
 
 export default function CreateSupplier({ supplier }: { supplier: Supplier }) {
     const { data, setData, post, put, processing, errors, wasSuccessful } = useForm({
