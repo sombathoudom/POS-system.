@@ -2,7 +2,6 @@
 
 namespace App\Utils;
 
-use App\Models\SaleTransaction;
 
 class Helpers
 {

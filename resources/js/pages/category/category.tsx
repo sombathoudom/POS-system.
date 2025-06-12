@@ -6,7 +6,7 @@ import AppLayout from '@/layouts/app-layout';
 import { PageProps, PaginatedResponse } from '@/types';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { PlusIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { FormEventHandler, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import CategoryForm, { CategoryFormData } from './components/category-form';
 interface Category {
@@ -35,7 +35,7 @@ export default function CategoryIndex({ categories }: { categories: PaginatedRes
         setIsDialogOpen(true);
     };
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();
         if (data.category_id) {
             put(route('category.update', data.category_id), {
