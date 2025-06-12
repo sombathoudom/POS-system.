@@ -20,7 +20,7 @@ class SaleTransactionDetail extends Model
 
     public function variant()
     {
-        return $this->belongsTo(ProductVariant::class, 'variant_id', 'id');
+        return $this->belongsTo(ProductVariant::class, 'variant_id', 'variant_id');
     }
 
     public function customer()

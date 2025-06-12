@@ -19,3 +19,10 @@ export function formatCurrency(amount: number) {
         currency: 'USD',
     }).format(amount);
 }
+
+export function formatCurrencyKHR(amount: number) {
+    return new Intl.NumberFormat('km-KH', {
+        style: 'currency',
+        currency: 'KHR',
+    }).format(amount);
+}

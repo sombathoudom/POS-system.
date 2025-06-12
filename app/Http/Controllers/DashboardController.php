@@ -59,13 +59,14 @@ class DashboardController extends Controller
             'profitOrLoss' => $profitOrLoss,
             'unpaidSales' => $unpaidSales->total_amount,
             'unpaidSalesCount' => $unpaidSales->count,
-            'topProducts' => $topProducts->map(function ($product) {
-                return [
-                    'name' => $product->product->product_name,
-                    'sales' => $product->total_quantity, // Total quantity sold
-                    'revenue' => $product->total_quantity * ($product->product->sell_price_usd ?? 0), // Revenue calculation
-                ];
-            }),
+            'topProducts' => [],
+            // 'topProducts' => $topProducts->map(function ($product) {
+            //     return [
+            //         'name' => $product->product->product_name,
+            //         'sales' => $product->total_quantity, // Total quantity sold
+            //         'revenue' => $product->total_quantity * ($product->product->sell_price_usd ?? 0), // Revenue calculation
+            //     ];
+            // }),
         ]);
     }
 }

@@ -8,8 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import AppLayout from '@/layouts/app-layout';
 import { PageProps } from '@/types';
 import formatCurrency from '@/utils/formatCurrency';
-import { Head, router, usePage } from '@inertiajs/react';
-import { SearchIcon } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { EyeIcon, SearchIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -100,7 +100,11 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex gap-2">
-                                        <Button>View</Button>
+                                        <Button asChild>
+                                            <Link href={route('sale-transaction.detail', saleTransaction.transaction_id)}>
+                                                <EyeIcon className="h-4 w-4" />
+                                            </Link>
+                                        </Button>
                                         <TransactionStatusButtons saleTransaction={saleTransaction} />
                                     </div>
                                 </TableCell>

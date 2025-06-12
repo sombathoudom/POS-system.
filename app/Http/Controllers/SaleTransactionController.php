@@ -6,6 +6,7 @@ use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Models\SaleTransaction;
 use Illuminate\Support\Facades\DB;
+use App\Http\Resources\SaleTransactionResource;
 
 class SaleTransactionController extends Controller
 {
@@ -56,5 +57,13 @@ class SaleTransactionController extends Controller
             DB::rollBack();
             return to_route('sale-transaction.index')->with('error', 'Sale transaction marked as cancelled');
         }
+    }
+
+    public function detail($id)
+    {
+        $saleTransaction = SaleTransaction::with('saleTransactionDetails', 'saleTransactionDetails.product', 'saleTransactionDetails.variant', 'customer')->find($id)->toResource();
+        return Inertia::render('admin/sale-transaction/detail', [
+            'saleTransaction' => $saleTransaction,
+        ]);
     }
 }

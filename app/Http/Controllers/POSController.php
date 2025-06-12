@@ -7,6 +7,7 @@ use App\Utils\Helpers;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use App\Models\ProductVariant;
 use App\Models\SaleTransaction;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -72,38 +73,24 @@ class POSController extends Controller
             ]);
 
             $product = collect($products['products'])->map(function ($product) use ($saleTransaction) {
-                $productData = Product::find($product['id']);
+                if (!isset($product['variant_id'])) {
+                    $productData = Product::find($product['id']);
+                } else {
+                    $productData = ProductVariant::find($product['variant_id']);
+                }
                 if (!$productData) {
-                    return response()->json(['message' => 'Product not found'], 404);
+                    throw new \Exception('Product not found');
                 }
                 if ($productData->quantity < $product['quantity']) {
-                    return response()->json(['message' => 'Product quantity is not enough'], 400);
+                    throw new \Exception('Product quantity is not enough');
                 }
-                if ($productData->variants->count() > 0) {
-                    $variant = $productData->variants->where('variant_id', $product['variant_id'])->first();
-                    if (!$variant) {
-                        return response()->json(['message' => 'Variant not found'], 404);
-                    }
-                    if ($variant->quantity < $product['quantity']) {
-                        return response()->json(['message' => 'Variant quantity is not enough'], 400);
-                    }
-                    $variant->quantity = $variant->quantity - $product['quantity'];
-                    $variant->save();
 
-                    SaleTransactionDetail::create([
-                        'sale_transaction_id' => $saleTransaction->transaction_id,
-                        'product_id' => $productData->product_id,
-                        'variant_id' => $variant->variant_id,
-                        'quantity' => $product['quantity'],
-                        'unit_price_usd' => $product['price'],
-                        'unit_price_khr' => $product['price'] * 4100,
-                    ]);
-                }
                 $productData->quantity = $productData->quantity - $product['quantity'];
                 $productData->save();
                 SaleTransactionDetail::create([
                     'sale_transaction_id' => $saleTransaction->transaction_id,
-                    'product_id' => $productData->product_id,
+                    'product_id' => isset($product['variant_id']) ? null : $productData->product_id,
+                    'variant_id' => isset($product['variant_id']) ? $product['variant_id'] : null,
                     'quantity' => $product['quantity'],
                     'unit_price_usd' => $product['price'],
                     'unit_price_khr' => $product['price'] * 4100,
