@@ -17,6 +17,7 @@ interface Variant {
     sell_price_usd: number;
     cost_price_khr: number;
     sell_price_khr: number;
+    current_stock: number;
     images: {
         id: number;
         path: string;
@@ -83,6 +84,7 @@ export default function Variants({ product }: { product: Product }) {
                                         <TableHead>Variant Code</TableHead>
                                         <TableHead>Size</TableHead>
                                         <TableHead>Color</TableHead>
+                                        <TableHead>Quantity</TableHead>
                                         <TableHead>Pricing (USD)</TableHead>
                                         <TableHead>Pricing (KHR)</TableHead>
                                         <TableHead>Actions</TableHead>
@@ -118,6 +120,9 @@ export default function Variants({ product }: { product: Product }) {
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant="outline">{variant.color}</Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline">{variant.current_stock}</Badge>
                                             </TableCell>
                                             <TableCell>
                                                 <div className="space-y-1">
