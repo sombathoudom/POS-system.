@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import useDebounce from '@/hooks/useDebounce';
+import { formatCurrency } from '@/lib/utils';
 import { PageProps } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
@@ -445,7 +446,7 @@ export default function POS({ productss }: POSProps) {
                                         </Badge>
                                         <Badge variant="outline">
                                             <DollarSign />
-                                            {product.price.toFixed(2)}
+                                            {formatCurrency(product.price)}
                                         </Badge>
                                     </div>
                                 </CardContent>
@@ -487,8 +488,8 @@ export default function POS({ productss }: POSProps) {
                                         <div className="flex flex-col">
                                             <p className="text-sm font-medium text-gray-800">{item.name}</p>
                                             <div className="flex items-center space-x-2">
-                                                <p className="text-xs font-medium text-gray-800">${getItemPrice(item).toFixed(2)}</p>
-                                                {item.discount > 0 && <span className="text-sm text-red-500">-${item.discount.toFixed(2)}</span>}
+                                                <p className="text-xs font-medium text-gray-800">{formatCurrency(getItemPrice(item))}</p>
+                                                {item.discount > 0 && <span className="text-sm text-red-500">-${formatCurrency(item.discount)}</span>}
                                             </div>
                                         </div>
                                         <Button variant="link" size="icon" onClick={() => setEditingItem(item)}>
@@ -551,7 +552,7 @@ export default function POS({ productss }: POSProps) {
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-gray-600">Subtotal</span>
-                                <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                                <span className="font-semibold">{formatCurrency(subtotal)}</span>
                             </div>
 
                             <div className="flex items-center justify-between">
@@ -578,7 +579,7 @@ export default function POS({ productss }: POSProps) {
                             </div>
                             <div className="flex items-center justify-between border-t border-gray-200 pt-4">
                                 <span className="text-lg font-bold text-gray-800">Total</span>
-                                <span className="text-lg font-bold text-blue-600">${total.toFixed(2)}</span>
+                                <span className="text-lg font-bold text-blue-600">{formatCurrency(total)}</span>
                             </div>
                         </div>
                         <div className="mt-6 space-y-3">
