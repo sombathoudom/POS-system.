@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
+import { formatCurrency } from '@/lib/utils';
 import { Link, router } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 
@@ -120,8 +121,8 @@ export default function Variants({ product }: { product: Product }) {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="space-y-1">
-                                                    <p className="text-sm">Cost: ${variant.cost_price_usd.toFixed(2)}</p>
-                                                    <p className="text-sm">Sell: ${variant.sell_price_usd.toFixed(2)}</p>
+                                                    <p className="text-sm">Cost: {formatCurrency(variant.cost_price_usd)}</p>
+                                                    <p className="text-sm">Sell: {formatCurrency(variant.sell_price_usd)}</p>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
