@@ -178,7 +178,8 @@ class ProductController extends Controller
                 $variant = $product->variants()->findOrFail($variantData['id']);
                 $variant->update($variantData);
             } else {
-                $variant = $product->variants()->create($variantData);
+                $arr = [...$variantData, 'cost_price_khr' => 0, 'sell_price_khr' => 0];
+                $variant = $product->variants()->create($arr);
             }
             $this->handleVariantImage($variant, $variantData);
         }
