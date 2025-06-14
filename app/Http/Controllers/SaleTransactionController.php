@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Inertia\Inertia;
+use App\Models\Customer;
 use Illuminate\Http\Request;
 use App\Models\SaleTransaction;
 use Illuminate\Support\Facades\DB;
@@ -64,6 +65,15 @@ class SaleTransactionController extends Controller
         $saleTransaction = SaleTransaction::with('saleTransactionDetails', 'saleTransactionDetails.product', 'saleTransactionDetails.variant', 'customer')->find($id)->toResource();
         return Inertia::render('admin/sale-transaction/detail', [
             'saleTransaction' => $saleTransaction,
+        ]);
+    }
+
+    public function edit($id)
+    {
+        $saleTransaction = SaleTransaction::with('saleTransactionDetails', 'saleTransactionDetails.product', 'saleTransactionDetails.variant', 'customer')->find($id)->toResource();
+        return Inertia::render('admin/sale-transaction/edit', [
+            'saleTransaction' => $saleTransaction,
+            'customers' => Customer::select('id', 'name')->get(),
         ]);
     }
 }

@@ -6,11 +6,15 @@ import { Link } from '@inertiajs/react';
 import { ArrowLeftIcon, PrinterIcon } from 'lucide-react';
 
 interface SaleTransactionDetail {
+    type: string;
+    product_id: number;
+    variant_id: number;
     name: string;
     quantity: number;
     unit_price: number;
     subtotal: number;
     size: string;
+    stock_remaining: number;
     color: string;
 }
 
@@ -21,25 +25,26 @@ interface SaleTransaction {
     total_amount_usd: number;
     delivery_fee: number;
     transaction_date: string;
+
     status: string;
     sale_transaction_details: SaleTransactionDetail[];
     customer: Customer;
 }
 
-interface Customer {
+export interface Customer {
     id: number;
     name: string;
     phone: string;
     address: string;
 }
 
-interface SaleTransactionResource {
+export interface SaleTransactionResource {
     data: SaleTransaction;
+    customers?: Customer[];
 }
 
 export default function DetailSaleTransaction({ saleTransaction }: { saleTransaction: SaleTransactionResource }) {
     const { data } = saleTransaction;
-    console.log(data.sale_transaction_details);
     return (
         <AppLayout>
             <div className="space-y-6 p-4">

@@ -25,6 +25,10 @@ class SaleTransactionResource extends JsonResource
                     $variants = is_iterable($detail->variant) ? $detail->variant : [$detail->variant];
                     foreach ($variants as $variant) {
                         $products[] = [
+                            'product_id' => null,
+                            'type' => 'variant',
+                            'variant_id' => $variant->variant_id,
+                            'stock_remaining' => $variant->quantity,
                             'name' => $variant->variant_code,
                             'quantity' => $detail->quantity,
                             'unit_price' => $variant->sell_price_usd,
@@ -35,6 +39,10 @@ class SaleTransactionResource extends JsonResource
                     }
                 } else {
                     $products[] = [
+                        'product_id' => $detail->product->product_id,
+                        'variant_id' => null,
+                        'type' => 'single',
+                        'stock_remaining' => $detail->product->quantity,
                         'name' => $detail->product->product_name,
                         'quantity' => $detail->quantity,
                         'unit_price' => $detail->product->sell_price_usd,

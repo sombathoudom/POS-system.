@@ -43,10 +43,6 @@ interface Product {
     }[];
 }
 
-interface SearchResponse {
-    products: Product[];
-}
-
 interface PurchaseFormData {
     supplier_id: string;
     order_date: string;
