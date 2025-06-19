@@ -639,7 +639,6 @@ export default function POS({ productss }: POSProps) {
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
                                 <Input
-                                    id="name"
                                     value={newCustomer.name}
                                     onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
                                     placeholder="Customer name"
@@ -649,7 +648,6 @@ export default function POS({ productss }: POSProps) {
                             <div className="grid gap-2">
                                 <Label htmlFor="phone">Phone</Label>
                                 <Input
-                                    id="phone"
                                     type="tel"
                                     value={newCustomer.phone}
                                     onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
