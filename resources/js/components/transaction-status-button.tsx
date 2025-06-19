@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button'; // Adjust path based on your UI library
-import { Link, router } from '@inertiajs/react';
-import { PencilIcon } from 'lucide-react';
+import { router } from '@inertiajs/react';
 import { Fragment } from 'react';
 
 interface SaleTransaction {
@@ -25,15 +24,6 @@ const TransactionStatusButtons = ({ saleTransaction }: TransactionStatusButtonsP
         <Fragment>
             {saleTransaction.status === 'unpaid' && (
                 <>
-                    <Button
-                        variant="warning" // Adjust variant based on your UI library (e.g., 'success' may not be valid)
-                        className="mr-2" // Optional: Add margin between buttons
-                        asChild
-                    >
-                        <Link href={route('sale-transaction.edit', saleTransaction.transaction_id)}>
-                            <PencilIcon className="h-4 w-4" />
-                        </Link>
-                    </Button>
                     <Button
                         variant="success" // Adjust variant based on your UI library (e.g., 'success' may not be valid)
                         onClick={() =>

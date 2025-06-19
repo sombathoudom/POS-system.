@@ -44,7 +44,7 @@ export function CustTable<T>({ data, columns, onEdit, onDelete, idKey, onPageCha
     return (
         <>
             <Table>
-                <TableHeader className="bg-primary-foreground">
+                <TableHeader>
                     <TableRow>
                         {columns.map((column) => (
                             <TableHead key={column.key as string}>{column.header}</TableHead>

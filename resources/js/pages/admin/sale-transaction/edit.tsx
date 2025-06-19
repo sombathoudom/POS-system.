@@ -26,13 +26,13 @@ export default function EditSaleTransaction({ saleTransaction, customers }: { sa
                 </div>
             </div>
             <div className="space-y-6 p-4">
-                <Input type="text" placeholder="Search Product" />
+                {/* <Input type="text" placeholder="Search Product" /> */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Product List</CardTitle>
                     </CardHeader>
                     <CardContent className="overflow-x-auto p-0">
-                        <div className="grid grid-cols-2 gap-4 p-4">
+                        <div className="grid grid-cols-3 gap-4 p-4">
                             <div className="space-y-2">
                                 <Label>Order Date</Label>
                                 <Input type="date" placeholder="Order Date" value={new Date(data.transaction_date).toISOString().split('T')[0]} />
@@ -49,6 +49,19 @@ export default function EditSaleTransaction({ saleTransaction, customers }: { sa
                                                 {customer.name}
                                             </SelectItem>
                                         ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Payment Status</Label>
+                                <Select defaultValue={data.status}>
+                                    <SelectTrigger>
+                                        <SelectValue defaultValue={data.status} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="paid">Paid</SelectItem>
+                                        <SelectItem value="unpaid">Unpaid</SelectItem>
+                                        <SelectItem value="partial_paid">Partial Paid</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

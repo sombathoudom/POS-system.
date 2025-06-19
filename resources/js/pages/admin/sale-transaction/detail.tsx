@@ -25,7 +25,6 @@ interface SaleTransaction {
     total_amount_usd: number;
     delivery_fee: number;
     transaction_date: string;
-
     status: string;
     sale_transaction_details: SaleTransactionDetail[];
     customer: Customer;

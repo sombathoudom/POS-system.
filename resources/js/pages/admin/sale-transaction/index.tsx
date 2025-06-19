@@ -9,7 +9,7 @@ import AppLayout from '@/layouts/app-layout';
 import { PageProps } from '@/types';
 import formatCurrency from '@/utils/formatCurrency';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { EyeIcon, SearchIcon } from 'lucide-react';
+import { EyeIcon, PencilIcon, SearchIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -103,6 +103,15 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
                                         <Button asChild>
                                             <Link href={route('sale-transaction.detail', saleTransaction.transaction_id)}>
                                                 <EyeIcon className="h-4 w-4" />
+                                            </Link>
+                                        </Button>
+                                        <Button
+                                            variant="warning" // Adjust variant based on your UI library (e.g., 'success' may not be valid)
+                                            className="mr-2" // Optional: Add margin between buttons
+                                            asChild
+                                        >
+                                            <Link href={route('sale-transaction.edit', saleTransaction.transaction_id)}>
+                                                <PencilIcon className="h-4 w-4" />
                                             </Link>
                                         </Button>
                                         <TransactionStatusButtons saleTransaction={saleTransaction} />

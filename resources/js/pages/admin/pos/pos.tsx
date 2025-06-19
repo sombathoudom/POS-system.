@@ -88,6 +88,7 @@ export interface POSProps {
 
 export default function POS({ productss }: POSProps) {
     const { categories } = usePage<PageProps>().props;
+    const [customerButton, setCustomerButton] = useState<boolean>(false);
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -96,11 +97,8 @@ export default function POS({ productss }: POSProps) {
     const [discount, setDiscount] = useState(0);
     const [deliveryFee, setDeliveryFee] = useState(2);
     const [editingItem, setEditingItem] = useState<CartItem | null>(null);
-    const [showInvoice, setShowInvoice] = useState(false);
     const [invoice, setInvoice] = useState<Invoice | null>(null);
     const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
-    const [customerSearch, setCustomerSearch] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
     const [totalKhr, setTotalKhr] = useState(0);
     const [status, setStatus] = useState('unpaid');
     const [selectedCustomer, setSelectedCustomer] = useState<Customer>({
@@ -132,20 +130,28 @@ export default function POS({ productss }: POSProps) {
     }, []);
 
     const handleCreateCustomer = async () => {
-        const response = await axios.post(route('customers.store'), {
-            name: newCustomer.name,
-            phone: newCustomer.phone,
-            address: newCustomer.address,
-        });
-        setSelectedCustomer({
-            id: response.data.id,
-            name: response.data.name,
-            phone: response.data.phone,
-            address: response.data.address,
-        });
-        setCustomers([...customers, response.data]);
-        setShowNewCustomerModal(false);
-        setNewCustomer({ name: '', phone: '', address: '' });
+        setCustomerButton(true);
+        try {
+            const response = await axios.post(route('customers.store'), {
+                name: newCustomer.name,
+                phone: newCustomer.phone,
+                address: newCustomer.address,
+            });
+            setSelectedCustomer({
+                id: response.data.id,
+                name: response.data.name,
+                phone: response.data.phone,
+                address: response.data.address,
+            });
+            setCustomers([...customers, response.data]);
+            setShowNewCustomerModal(false);
+            setNewCustomer({ name: '', phone: '', address: '' });
+        } catch (error) {
+            toast.error('Error creating customer');
+            console.error('Error creating customer:', error);
+        }
+
+        setCustomerButton(false);
     };
     const addToCart = (product: Product) => {
         setCart((prevCart) => {
@@ -266,7 +272,7 @@ export default function POS({ productss }: POSProps) {
                   search: searchProducts ?? '',
                   category: selectedCategory === 'all' ? '' : selectedCategory,
               };
-
+        console.log(params);
         if (isClear) {
             setSearchQuery('');
             setSelectedCategory('');
@@ -365,7 +371,7 @@ export default function POS({ productss }: POSProps) {
                         <div className="flex items-center space-x-2">
                             <div className="flex items-center space-x-2">
                                 <Filter className="text-gray-400" size={20} />
-                                <Select>
+                                <Select onValueChange={(value) => setSelectedCategory(value)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select Category" />
                                     </SelectTrigger>
@@ -374,11 +380,7 @@ export default function POS({ productss }: POSProps) {
                                             All
                                         </SelectItem>
                                         {categories.map((category) => (
-                                            <SelectItem
-                                                key={category.category_id.toString()}
-                                                value={category.category_id.toString()}
-                                                onClick={() => setSelectedCategory(category.category_id.toString())}
-                                            >
+                                            <SelectItem key={category.category_id.toString()} value={category.category_id.toString()}>
                                                 {category.category_name}
                                             </SelectItem>
                                         ))}
@@ -670,7 +672,9 @@ export default function POS({ productss }: POSProps) {
                             <Button variant="outline" onClick={() => setShowNewCustomerModal(false)}>
                                 Cancel
                             </Button>
-                            <Button onClick={handleCreateCustomer}>Add Customer</Button>
+                            <Button onClick={handleCreateCustomer} disabled={customerButton}>
+                                Add Customer
+                            </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

@@ -18,6 +18,7 @@ class SaleTransactionResource extends JsonResource
             'transaction_id' => $this->transaction_id,
             'invoice_number' => $this->invoice_number,
             'customer' => $this->customer,
+            'payment_status' => $this->status,
             'sale_transaction_details' => $this->saleTransactionDetails->map(function ($detail) {
                 $products = [];
                 if ($detail->variant) {
