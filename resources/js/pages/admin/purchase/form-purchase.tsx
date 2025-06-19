@@ -174,7 +174,7 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
         );
         updateTotalAmount(updatedProducts);
         setSearchQuery('');
-        setSearchResults([]);
+        // setSearchResults([]);
         toast.success('Product added successfully');
     };
 
