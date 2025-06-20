@@ -29,7 +29,7 @@ const TransactionStatusButtons = ({ saleTransaction }: TransactionStatusButtonsP
                         onClick={() =>
                             router.post(
                                 route('sale-transaction.markAsPaid', { id: saleTransaction.transaction_id }),
-                                {},
+                                { preserveState: true, preserveScroll: true },
                                 {
                                     onError: (errors) => {
                                         console.error('Error marking as paid:', errors);
@@ -47,7 +47,7 @@ const TransactionStatusButtons = ({ saleTransaction }: TransactionStatusButtonsP
                         onClick={() =>
                             router.post(
                                 route('sale-transaction.markAsCancelled', { id: saleTransaction.transaction_id }),
-                                {},
+                                { preserveState: true, preserveScroll: true },
                                 {
                                     onError: (errors) => {
                                         console.error('Error marking as cancelled:', errors);
