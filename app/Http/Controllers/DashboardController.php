@@ -59,7 +59,7 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($detail) {
                 return [
-                    'label' => $detail->variant->variant_code ?? $detail->product->product_name ?? 'Unnamed',
+                    'label' => $detail->variant->variant_code ?? $detail->product->product_name ?? 'N/A',
                     'quantity' => $detail->total_quantity,
                 ];
             });
@@ -87,6 +87,23 @@ class DashboardController extends Controller
         $profitOrLoss = $filteredPaidSales - $cogs - $expenses;
 
 
+        $categorySalesToday = DB::table('sale_transaction_details as std')
+            ->join('sale_transactions as st', 'st.transaction_id', '=', 'std.sale_transaction_id')
+            ->join('product_variants as pv', 'pv.variant_id', '=', 'std.variant_id')
+            ->join('products as p', 'p.product_id', '=', 'pv.product_id')
+            ->join('categories as c', 'c.category_id', '=', 'p.category_id')
+            ->where('st.status', 'paid')
+            ->whereBetween('st.created_at', [$from, $to])
+            ->select(
+                'c.category_id',
+                'c.category_name',
+                DB::raw('SUM(std.quantity) as total_sold')
+            )
+            ->groupBy('c.category_id', 'c.category_name')
+            ->orderByDesc('total_sold')
+            ->get();
+
+
         return Inertia::render('dashboard', [
             'dailySales' => $dailySales,
             'monthlySales' => $monthlySales,
@@ -94,6 +111,7 @@ class DashboardController extends Controller
             'unpaidSales' => $unpaidSales,
             'topProducts' => $topProducts,
             'profitOrLoss' => $profitOrLoss,
+            'categorySalesToday' => $categorySalesToday,
         ]);
 
         // return Inertia::render('dashboard', [
