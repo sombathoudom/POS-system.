@@ -84,7 +84,6 @@ class PurchaseController extends Controller
             DB::commit();
             return to_route('purchase.index')->with('success', 'Purchase order created successfully');
         } catch (\Exception $e) {
-            dd($e);
             DB::rollBack();
             return to_route('purchase.index')->with('error', 'Purchase order creation failed');
         }
