@@ -24,6 +24,7 @@ interface Product {
     color: string;
     type: string;
     cost_price_usd: number;
+    unit_price?: number;
     variant_id?: number; // Added: Optional variant_id for variant products
     variant_code?: string; // Added: Optional variant_code for both single and variant products
     images: {
@@ -169,6 +170,7 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
                 color: p.color,
                 quantity: p.quantity,
                 cost_price_usd: p.cost_price_usd,
+                unit_price: p.unit_price || 0,
                 type: p.type,
             })),
         );
@@ -193,6 +195,7 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
                 color: p.color,
                 quantity: p.quantity,
                 cost_price_usd: p.cost_price_usd,
+                unit_price: p.unit_price || 0,
                 type: p.type,
             })),
         );
@@ -213,6 +216,7 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
                 color: p.color,
                 quantity: p.quantity,
                 cost_price_usd: p.cost_price_usd,
+                unit_price: p.unit_price || 0,
                 type: p.type,
             })),
         );
@@ -220,8 +224,30 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
     };
 
     const updateTotalAmount = (productList: Product[]) => {
-        const total = productList.reduce((sum, product) => sum + product.quantity * product.cost_price_usd, 0);
+        const total = productList.reduce((sum, product) => sum + product.quantity * (product.unit_price || 0), 0);
         setData('total_amount', total);
+    };
+
+    const updateProductPrice = (index: number, price: number) => {
+        const updatedProducts = [...products];
+        updatedProducts[index].unit_price = price;
+        setProducts(updatedProducts);
+        setData(
+            'items',
+            updatedProducts.map((p) => ({
+                product_id: p.id,
+                variant_id: p.type === 'variant' ? p.variant_id : undefined,
+                product_code: p.product_code,
+                variant_code: p.variant_code || p.product_code,
+                size: p.size,
+                color: p.color,
+                quantity: p.quantity,
+                cost_price_usd: p.cost_price_usd, // `cost_price_usd` is sent, but sourced from unit_price
+                unit_price: p.unit_price || 0,
+                type: p.type,
+            })),
+        );
+        updateTotalAmount(updatedProducts);
     };
 
     // Group products by product_code
@@ -419,8 +445,17 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
                                                             className="w-20"
                                                         />
                                                     </TableCell>
-                                                    <TableCell>${product.cost_price_usd}</TableCell>
-                                                    <TableCell>${(product.quantity * product.cost_price_usd).toFixed(2)}</TableCell>
+                                                    <TableCell>
+                                                        <Input
+                                                            type="number"
+                                                            min="0"
+                                                            step="0.01"
+                                                            value={product.unit_price}
+                                                            onChange={(e) => updateProductPrice(index, parseFloat(e.target.value))}
+                                                            className="w-20"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell>${(product.quantity * (product.unit_price || 0)).toFixed(2)}</TableCell>
                                                     <TableCell>
                                                         <Button type="button" variant="destructive" onClick={() => removeProduct(index)}>
                                                             <CircleX />

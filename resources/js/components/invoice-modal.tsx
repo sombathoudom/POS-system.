@@ -104,9 +104,10 @@ const InvoiceModal = ({ invoice, onClose }: { invoice: Invoice; onClose: () => v
                             <p className="text-left text-xs font-bold">អាស័យដ្ឋាន: {invoice?.customer?.address || 'N/A'}</p>
 
                             <p className="text-left text-xs font-bold">
-                                សេវាដឹក: {formatCurrency(invoice?.delivery_fee)} | តម្លៃសរុប: {formatCurrency(invoice?.total_amount_usd)} |
+                                សេវាដឹក: {formatCurrency(invoice?.delivery_fee)} | តម្លៃសរុប: {formatCurrency(invoice?.total_amount_usd)}|
                                 {formatCurrency(invoice?.total_amount_khr, 'KHR')}
                             </p>
+                            <p className="text-left text-xs font-bold">ស្ថានភាព: {invoice?.status === 'paid' ? 'បានបង់ប្រាក់' : 'មិនបានបង់ប្រាក់'}</p>
                             <p className="text-left text-xs font-bold">Ref: {invoice?.invoice_number || 'N/A'}</p>
                         </div>
                     </div>

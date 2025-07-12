@@ -108,14 +108,13 @@ class POSController extends Controller
                     'transaction_date' => Helpers::formatDate($saleTransaction->transaction_date),
                     'products' => $request->all()['products'],
                     'customer' => $saleTransaction->customer,
+                    'status' => $saleTransaction->status,
                 ]
             ], 200);
         } catch (\Throwable $th) {
             DB::rollBack();
             return response()->json(['message' => $th->getMessage()], 500);
         }
-
-
         return response()->json($product);
     }
 

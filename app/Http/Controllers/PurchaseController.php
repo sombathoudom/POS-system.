@@ -33,7 +33,6 @@ class PurchaseController extends Controller
 
     public function store(Request $request)
     {
-
         try {
             $request->validate([
                 'supplier_id' => 'required',
@@ -55,6 +54,9 @@ class PurchaseController extends Controller
             ]);
 
             foreach ($request->items as $item) {
+                if ($item['unit_price'] == 0) {
+                    $item['unit_price'] = $item['cost_price_usd'];
+                }
                 if ($item['type'] == 'single') {
                     $product = Product::find($item['product_id']);
                     $product->quantity += $item['quantity'];
@@ -64,8 +66,8 @@ class PurchaseController extends Controller
                         'product_id' => $item['product_id'],
                         'variant_id' => null,
                         'quantity' =>  $item['quantity'],
-                        'unit_price' => $item['cost_price_usd'],
-                        'subtotal' => $item['quantity'] * $item['cost_price_usd'],
+                        'unit_price' => $item['unit_price'],
+                        'subtotal' => $item['quantity'] * $item['unit_price'],
                     ]);
                 } else {
                     $variant = ProductVariant::find($item['variant_id']);
@@ -76,8 +78,8 @@ class PurchaseController extends Controller
                         'product_id' => $item['product_id'],
                         'variant_id' => $variant['variant_id'],
                         'quantity' =>  $item['quantity'],
-                        'unit_price' => $item['cost_price_usd'],
-                        'subtotal' => $item['quantity'] * $item['cost_price_usd'],
+                        'unit_price' => $item['unit_price'],
+                        'subtotal' => $item['quantity'] * $item['unit_price'],
                     ]);
                 }
             }

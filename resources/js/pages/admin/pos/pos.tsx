@@ -27,6 +27,7 @@ import {
     Search,
     Shirt,
     ShoppingCart,
+    Truck,
     UserPlus,
     X,
 } from 'lucide-react';
@@ -75,6 +76,7 @@ export interface Invoice {
     total_amount_khr: number;
     delivery_fee: number;
     transaction_date: string;
+    status: string;
     customer: Customer;
     products: Product[];
 }
@@ -557,19 +559,41 @@ export default function POS({ productss }: POSProps) {
                                 <span className="font-semibold">{formatCurrency(subtotal)}</span>
                             </div>
 
-                            <div className="flex items-center justify-between">
+                            <div className="flex w-full items-center justify-between">
                                 <span className="text-gray-600">Delivery Fee</span>
-                                <Input
-                                    type="number"
-                                    value={deliveryFee}
-                                    onChange={(e) => setDeliveryFee(Number(e.target.value))}
-                                    className="w-24 text-right"
-                                />
+                                <div className="ml-auto flex flex-col items-end space-y-1">
+                                    <Input
+                                        type="number"
+                                        value={deliveryFee}
+                                        onChange={(e) => setDeliveryFee(Number(e.target.value))}
+                                        className="w-24 text-right"
+                                    />
+                                    <Badge variant="destructive" className="cursor-pointer text-xs" onClick={() => setDeliveryFee(0)}>
+                                        <Truck />
+                                        Free Delivery
+                                    </Badge>
+                                </div>
                             </div>
-                            <div className="flex items-center justify-between">
+                            <div className="flex w-full justify-between">
                                 <span className="text-gray-600">Total KHR</span>
-                                <Input type="number" value={totalKhr} onChange={handleTotalKhr} className="w-24 text-right" />
+                                <div className="ml-auto flex flex-col items-end space-y-1">
+                                    <Input type="number" value={totalKhr} onChange={handleTotalKhr} className="w-24 text-right" />
+                                    <div className="flex items-center gap-2">
+                                        {/* price of khr */}
+                                        {['33000', '49500', '57500', '74000', '98500'].map((item) => (
+                                            <Badge
+                                                variant="success"
+                                                className="cursor-pointer text-xs"
+                                                key={item}
+                                                onClick={() => setTotalKhr(Number(item))}
+                                            >
+                                                {item}៛
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
+
                             <div className="flex items-center justify-between">
                                 <span className="text-gray-600">Order Discount</span>
                                 <Input
