@@ -74,9 +74,9 @@ class POSController extends Controller
 
             $product = collect($products['products'])->map(function ($product) use ($saleTransaction) {
                 if (!isset($product['variant_id'])) {
-                    $productData = Product::find($product['id']);
+                    $productData = Product::where('product_id', $product['product_id'])->lockForUpdate()->first();
                 } else {
-                    $productData = ProductVariant::find($product['variant_id']);
+                    $productData = ProductVariant::where('variant_id', $product['variant_id'])->lockForUpdate()->first();
                 }
                 if (!$productData) {
                     throw new \Exception('Product not found');
