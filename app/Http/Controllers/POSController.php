@@ -56,66 +56,92 @@ class POSController extends Controller
     public function saleProducts(Request $request)
     {
         try {
-            DB::beginTransaction();
-            $products = $request->all();
+            // Start transaction using closure for auto commit/rollback
+            return DB::transaction(function () use ($request) {
+                $products = $request->all();
 
-            $saleTransaction = SaleTransaction::create([
-                'customer_id' => $products['customer_id'],
-                'invoice_number' => $this->generateInvoiceNumber(),
-                'user_id' => 1,
-                'status' => $products['status'],
-                'currency' => 'USD',
-                'total_amount_usd' => $products['total'],
-                'total_amount_khr' => $products['total_khr'],
-                'delivery_fee' => $products['deliveryFee'],
-                'total_discount' => $products['discount'],
-                'transaction_date' => now('Asia/Phnom_Penh')->format('Y-m-d H:i:s'),
-            ]);
-
-            $product = collect($products['products'])->map(function ($product) use ($saleTransaction) {
-                if (!isset($product['variant_id'])) {
-                    $productData = Product::where('product_id', $product['id'])->lockForUpdate()->first();
-                } else {
-                    $productData = ProductVariant::where('variant_id', $product['variant_id'])->lockForUpdate()->first();
-                }
-                if (!$productData) {
-                    throw new \Exception('Product not found');
-                }
-                if ($productData->quantity < $product['quantity']) {
-                    throw new \Exception('Product quantity is not enough');
-                }
-
-                $productData->quantity = $productData->quantity - $product['quantity'];
-                $productData->save();
-                SaleTransactionDetail::create([
-                    'sale_transaction_id' => $saleTransaction->transaction_id,
-                    'product_id' => isset($product['variant_id']) ? null : $productData->product_id,
-                    'variant_id' => isset($product['variant_id']) ? $product['variant_id'] : null,
-                    'quantity' => $product['quantity'],
-                    'unit_price_usd' => $product['price'],
-                    'unit_price_khr' => $product['price'] * 4100,
+                // 1. Create the sale transaction
+                $saleTransaction = SaleTransaction::create([
+                    'customer_id' => $products['customer_id'],
+                    'invoice_number' => $this->generateInvoiceNumber(),
+                    'user_id' => 1,
+                    'status' => $products['status'],
+                    'currency' => 'USD',
+                    'total_amount_usd' => $products['total'],
+                    'total_amount_khr' => $products['total_khr'],
+                    'delivery_fee' => $products['deliveryFee'],
+                    'total_discount' => $products['discount'],
+                    'transaction_date' => now('Asia/Phnom_Penh')->format('Y-m-d H:i:s'),
                 ]);
-                return $productData;
-            });
-            DB::commit();
-            return response()->json([
-                'message' => 'Sale products successfully',
-                'data' => [
-                    'invoice_number' => $saleTransaction->invoice_number,
-                    'total_amount_usd' => $saleTransaction->total_amount_usd,
-                    'total_amount_khr' => $saleTransaction->total_amount_khr,
-                    'delivery_fee' => $saleTransaction->delivery_fee,
-                    'transaction_date' => Helpers::formatDate($saleTransaction->transaction_date),
-                    'products' => $request->all()['products'],
-                    'customer' => $saleTransaction->customer,
-                    'status' => $saleTransaction->status,
-                ]
-            ], 200);
+
+                // 2. Aggregate by product/variant to prevent double deduction
+                $cartItems = collect($products['products'])
+                    ->groupBy(function ($item) {
+                        // Unique key by product or variant
+                        return isset($item['variant_id'])
+                            ? 'v_' . $item['variant_id']
+                            : 'p_' . $item['id'];
+                    })
+                    ->map(function ($items) {
+                        // Sum quantities for duplicate items
+                        $first = $items->first();
+                        $totalQty = $items->sum('quantity');
+                        $first['quantity'] = $totalQty;
+                        return $first;
+                    });
+
+                // 3. Deduct stock and create transaction details
+                $cartItems->each(function ($product) use ($saleTransaction) {
+                    if (!isset($product['variant_id'])) {
+                        $productData = Product::where('product_id', $product['id'])
+                            ->lockForUpdate()
+                            ->first();
+                    } else {
+                        $productData = ProductVariant::where('variant_id', $product['variant_id'])
+                            ->lockForUpdate()
+                            ->first();
+                    }
+                    if (!$productData) {
+                        throw new \Exception('Product not found');
+                    }
+                    if ($productData->quantity < $product['quantity']) {
+                        throw new \Exception('Product quantity is not enough');
+                    }
+
+                    // Deduct stock
+                    $productData->quantity -= $product['quantity'];
+                    $productData->save();
+
+                    // Record sale transaction detail
+                    SaleTransactionDetail::create([
+                        'sale_transaction_id' => $saleTransaction->transaction_id,
+                        'product_id' => isset($product['variant_id']) ? null : $productData->product_id,
+                        'variant_id' => isset($product['variant_id']) ? $product['variant_id'] : null,
+                        'quantity' => $product['quantity'],
+                        'unit_price_usd' => $product['price'],
+                        'unit_price_khr' => $product['price'] * 4100,
+                    ]);
+                });
+
+                // 4. Return your desired response
+                return response()->json([
+                    'message' => 'Sale products successfully',
+                    'data' => [
+                        'invoice_number' => $saleTransaction->invoice_number,
+                        'total_amount_usd' => $saleTransaction->total_amount_usd,
+                        'total_amount_khr' => $saleTransaction->total_amount_khr,
+                        'delivery_fee' => $saleTransaction->delivery_fee,
+                        'transaction_date' => Helpers::formatDate($saleTransaction->transaction_date),
+                        'products' => $cartItems->values(),
+                        'customer' => $saleTransaction->customer,
+                        'status' => $saleTransaction->status,
+                    ]
+                ], 200);
+            }); // DB::transaction closure will auto-commit or rollback
         } catch (\Throwable $th) {
-            DB::rollBack();
+            // Any error gets here, rollback already done
             return response()->json(['message' => $th->getMessage()], 500);
         }
-        return response()->json($product);
     }
 
     public function generateInvoiceNumber()
