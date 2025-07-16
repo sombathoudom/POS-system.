@@ -13,6 +13,7 @@ interface SaleTransactionDetail {
     quantity: number;
     unit_price: number;
     subtotal: number;
+    images: string;
     size: string;
     stock_remaining: number;
     color: string;

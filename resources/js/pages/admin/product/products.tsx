@@ -12,7 +12,7 @@ import { Pencil, PlusIcon, Trash2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 // TypeScript interfaces
-interface Product {
+export interface Product {
     id: number;
     product_name: string;
     category: {
@@ -36,7 +36,7 @@ interface Product {
     }[];
 }
 
-interface PaginatedProducts {
+export interface PaginatedProducts {
     data: Product[];
     meta: {
         current_page: number;
@@ -93,11 +93,11 @@ export default function Products({ products }: { products: PaginatedProducts }) 
                                                         className="border-background h-12 w-12 rounded-full border-2 object-cover"
                                                     />
                                                 ))}
-                                                {product.images.length > 3 && (
+                                                {/* {product.images.length > 3 && (
                                                     <div className="border-background bg-muted flex h-12 w-12 items-center justify-center rounded-full border-2 text-xs font-medium">
                                                         +{product.images.length - 3}
                                                     </div>
-                                                )}
+                                                )} */}
                                             </div>
                                         ) : (
                                             <span className="text-gray-500">No images</span>

@@ -34,6 +34,8 @@ class SaleTransactionResource extends JsonResource
                             'quantity' => $detail->quantity,
                             'unit_price' => $variant->sell_price_usd,
                             'size' => $variant->size,
+                            'images' => $variant->images->first()?->path ? asset('storage/' . $variant->images->first()?->path) : "",
+
                             'color' => $variant->color,
                             'subtotal' => $variant->sell_price_usd * $detail->quantity,
                         ];
@@ -48,6 +50,7 @@ class SaleTransactionResource extends JsonResource
                         'quantity' => $detail->quantity,
                         'unit_price' => $detail->product->sell_price_usd,
                         'size' => $detail->product->size,
+                        'images' =>  $detail->product->images->first()?->path ? asset('storage/' . $detail->product->images->first()?->path) : "",
                         'color' => $detail->product->color,
                         'subtotal' => $detail->product->sell_price_usd * $detail->quantity,
                     ];

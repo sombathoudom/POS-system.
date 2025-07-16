@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use Inertia\Inertia;
+use App\Models\Product;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use App\Models\SaleTransaction;
 use Illuminate\Support\Facades\DB;
+use App\Http\Resources\ProductResource;
 use App\Http\Resources\SaleTransactionResource;
 
 class SaleTransactionController extends Controller
@@ -68,12 +70,17 @@ class SaleTransactionController extends Controller
         ]);
     }
 
-    public function edit($id)
+    public function edit($id, Request $request)
     {
-        $saleTransaction = SaleTransaction::with('saleTransactionDetails', 'saleTransactionDetails.product', 'saleTransactionDetails.variant', 'customer')->find($id)->toResource();
+        $saleTransaction = SaleTransaction::with('saleTransactionDetails', 'saleTransactionDetails.product', 'saleTransactionDetails.product.images', 'saleTransactionDetails.variant', 'saleTransactionDetails.variant.images', 'customer')->find($id)->toResource();
+        $products = Product::with(['category', 'variants', 'images'])
+            ->when($request->search, fn($query) => $query->where('product_name', 'like', '%' . $request->search . '%'))
+            ->latest()
+            ->paginate(10);
         return Inertia::render('admin/sale-transaction/edit', [
             'saleTransaction' => $saleTransaction,
             'customers' => Customer::select('id', 'name')->get(),
+            'allProducts' =>  ProductResource::collection($products),
         ]);
     }
 
