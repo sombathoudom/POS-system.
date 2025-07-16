@@ -76,4 +76,15 @@ class SaleTransactionController extends Controller
             'customers' => Customer::select('id', 'name')->get(),
         ]);
     }
+
+    public function printInvoice($saleTransactionId)
+    {
+        $saleTransaction = SaleTransaction::with('saleTransactionDetails', 'saleTransactionDetails.product', 'saleTransactionDetails.variant', 'customer')->find($saleTransactionId)->toResource();
+        // return Inertia::render('admin/sale-transaction/print-invoice', [
+        //     'saleTransaction' => $saleTransaction,
+        // ]);
+        return view('print_invoice', [
+            'saleTransaction' => $saleTransaction,
+        ]);
+    }
 }

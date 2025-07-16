@@ -9,7 +9,7 @@ import AppLayout from '@/layouts/app-layout';
 import { PageProps } from '@/types';
 import formatCurrency from '@/utils/formatCurrency';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { EyeIcon, PencilIcon, SearchIcon } from 'lucide-react';
+import { EyeIcon, PencilIcon, PrinterIcon, SearchIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -43,6 +43,9 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
 
+    const handleOpenNewTab = (url: string) => {
+        window.open(url, '_blank');
+    };
     useEffect(() => {
         if (flash.success) {
             toast.success(flash.success);
@@ -67,7 +70,7 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
                     <Input type="text" placeholder="Search Customer" value={search} onChange={(e) => setSearch(e.target.value)} />
                     <Button
                         variant="outline"
-                        onClick={() => router.get(route('sale-transaction.index'), { search: search }, { preserveScroll: true })}
+                        onClick={() => router.get(route('sale-transaction.index'), { search: search }, { preserveScroll: true, preserveState: true })}
                     >
                         <SearchIcon className="h-4 w-4" />
                         Search
@@ -114,6 +117,20 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
                                                 <PencilIcon className="h-4 w-4" />
                                             </Link>
                                         </Button>
+
+                                        <Button asChild>
+                                            <Link
+                                                href="#"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    handleOpenNewTab(route('sale-transaction.print-invoice', saleTransaction.transaction_id));
+                                                }}
+                                                target="_blank"
+                                            >
+                                                <PrinterIcon className="h-4 w-4" />
+                                            </Link>
+                                        </Button>
+
                                         <TransactionStatusButtons saleTransaction={saleTransaction} />
                                     </div>
                                 </TableCell>
@@ -124,7 +141,7 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
                 <CustPagination
                     currentPage={saleTransactions.current_page}
                     lastPage={saleTransactions.last_page}
-                    onPageChange={(page) => router.get(route('sale-transaction.index'), { page }, { preserveScroll: true })}
+                    onPageChange={(page) => router.get(route('sale-transaction.index'), { page }, { preserveScroll: true, preserveState: true })}
                 />
             </div>
         </AppLayout>
