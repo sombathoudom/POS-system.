@@ -102,7 +102,7 @@ export default function POS({ productss }: POSProps) {
     const [invoice, setInvoice] = useState<Invoice | null>(null);
     const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
     const [totalKhr, setTotalKhr] = useState(0);
-    const [status, setStatus] = useState('unpaid');
+    const [status, setStatus] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState<Customer>({
         id: 1,
         name: 'Walk-in Customer',
@@ -274,7 +274,6 @@ export default function POS({ productss }: POSProps) {
                   search: searchProducts ?? '',
                   category: selectedCategory === 'all' ? '' : selectedCategory,
               };
-        console.log(params);
         if (isClear) {
             setSearchQuery('');
             setSelectedCategory('');
@@ -287,6 +286,10 @@ export default function POS({ productss }: POSProps) {
     };
 
     const handleSaleProducts = () => {
+        if (!status) {
+            toast.error('Please select payment status');
+            return;
+        }
         axios
             .post(route('pos.saleProducts'), {
                 products: cart,
@@ -302,6 +305,7 @@ export default function POS({ productss }: POSProps) {
                 setCart([]);
                 setDiscount(0);
                 setInvoice(response.data.data);
+                setStatus('');
                 toast.success('Sale products successfully');
             })
             .catch((error) => {
@@ -473,9 +477,9 @@ export default function POS({ productss }: POSProps) {
                 </div>
 
                 {/* Right side - Cart and Payment */}
-                <div className="flex w-1/3 flex-col border-l border-gray-200 bg-white">
+                <div className="flex w-1/3 flex-col border-l border-gray-200">
                     <div className="border-b border-gray-200 p-6">
-                        <h2 className="flex items-center text-2xl font-bold text-gray-800">
+                        <h2 className="text-muted-foreground flex items-center text-2xl font-bold">
                             <ShoppingCart className="mr-2" size={24} />
                             Current Order
                         </h2>
@@ -490,9 +494,9 @@ export default function POS({ productss }: POSProps) {
                                     </div>
                                     <div className="flex w-full items-center">
                                         <div className="flex flex-col">
-                                            <p className="text-sm font-medium text-gray-800">{item.name}</p>
+                                            <p className="text-muted-foreground text-sm font-medium">{item.name}</p>
                                             <div className="flex items-center space-x-2">
-                                                <p className="text-xs font-medium text-gray-800">{formatCurrency(getItemPrice(item))}</p>
+                                                <p className="text-muted-foreground text-xs font-medium">{formatCurrency(getItemPrice(item))}</p>
                                                 {item.discount > 0 && <span className="text-sm text-red-500">-${formatCurrency(item.discount)}</span>}
                                             </div>
                                         </div>
@@ -542,25 +546,24 @@ export default function POS({ productss }: POSProps) {
                     <div className="border-t border-gray-200 p-6">
                         <div className="space-y-4">
                             <div className="flex items-center justify-between gap-4">
-                                <span className="text-gray-600">Status</span>
+                                <span className="text-muted-foreground">Status</span>
                                 <Select value={status} onValueChange={(value) => setStatus(value)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select Status" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="text-muted-foreground">
                                         <SelectItem value="paid">Paid</SelectItem>
                                         <SelectItem value="unpaid">Unpaid</SelectItem>
-                                        <SelectItem value="partial_paid">Partial Paid</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-gray-600">Subtotal</span>
+                                <span className="text-muted-foreground">Subtotal</span>
                                 <span className="font-semibold">{formatCurrency(subtotal)}</span>
                             </div>
 
                             <div className="flex w-full items-center justify-between">
-                                <span className="text-gray-600">Delivery Fee</span>
+                                <span className="text-muted-foreground">Delivery Fee</span>
                                 <div className="ml-auto flex flex-col items-end space-y-1">
                                     <Input
                                         type="number"
@@ -575,7 +578,7 @@ export default function POS({ productss }: POSProps) {
                                 </div>
                             </div>
                             <div className="flex w-full justify-between">
-                                <span className="text-gray-600">Total KHR</span>
+                                <span className="text-muted-foreground">Total KHR</span>
                                 <div className="ml-auto flex flex-col items-end space-y-1">
                                     <Input type="number" value={totalKhr} onChange={handleTotalKhr} className="w-24 text-right" />
                                     <div className="flex items-center gap-2">
@@ -595,7 +598,7 @@ export default function POS({ productss }: POSProps) {
                             </div>
 
                             <div className="flex items-center justify-between">
-                                <span className="text-gray-600">Order Discount</span>
+                                <span className="text-muted-foreground">Order Discount</span>
                                 <Input
                                     type="number"
                                     value={discount}
