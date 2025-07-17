@@ -72,16 +72,40 @@ class SaleTransactionController extends Controller
 
     public function edit($id, Request $request)
     {
-        $saleTransaction = SaleTransaction::with('saleTransactionDetails', 'saleTransactionDetails.product', 'saleTransactionDetails.product.images', 'saleTransactionDetails.variant', 'saleTransactionDetails.variant.images', 'customer')->find($id)->toResource();
-        $products = Product::with(['category', 'variants', 'images'])
-            ->when($request->search, fn($query) => $query->where('product_name', 'like', '%' . $request->search . '%'))
-            ->latest()
-            ->paginate(10);
+        $saleTransaction = SaleTransaction::with('saleTransactionDetails', 'saleTransactionDetails.product', 'saleTransactionDetails.product.images', 'saleTransactionDetails.variant', 'saleTransactionDetails.variant.images', 'customer')->find($id)->toResource(SaleTransactionResource::class);
+
         return Inertia::render('admin/sale-transaction/edit', [
             'saleTransaction' => $saleTransaction,
             'customers' => Customer::select('id', 'name')->get(),
-            'allProducts' =>  ProductResource::collection($products),
         ]);
+    }
+
+    public function searchProductsEdit(Request $request)
+    {
+        $products = Product::with(['category', 'variants', 'images'])
+            ->where(
+                function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('quantity', '>', 0)
+                            ->whereNull('deleted_at');
+                    })
+                        ->orWhereHas('variants', function ($q) {
+                            $q->where('quantity', '>', 0)
+                                ->whereNull('deleted_at');
+                        });
+                }
+            )
+            ->when($request->search, function ($query) use ($request) {
+                $query->where('product_name', 'like', '%' . $request->search . '%')
+                    ->orWhere('product_code', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('variants', function ($query) use ($request) {
+                        $query->Where('variant_code', 'like', '%' . $request->search . '%');
+                    });
+            })
+            ->latest()
+            ->paginate(10);
+
+        return ProductResource::collection($products);
     }
 
     public function printInvoice($saleTransactionId)

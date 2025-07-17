@@ -5,7 +5,7 @@ import { formatCurrency, formatCurrencyKHR, formatDate } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ArrowLeftIcon, PrinterIcon } from 'lucide-react';
 
-interface SaleTransactionDetail {
+export interface SaleTransactionDetail {
     type: string;
     product_id: number;
     variant_id: number;
@@ -27,6 +27,7 @@ interface SaleTransaction {
     delivery_fee: number;
     transaction_date: string;
     status: string;
+    discount: number;
     sale_transaction_details: SaleTransactionDetail[];
     customer: Customer;
 }

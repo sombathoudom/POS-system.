@@ -37,6 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('sale-transaction/{id}/detail', [SaleTransactionController::class, 'detail'])->name('sale-transaction.detail');
     Route::get('sale-transaction/{id}/edit', [SaleTransactionController::class, 'edit'])->name('sale-transaction.edit');
     Route::get('sale-transaction/{id}/print-invoice', [SaleTransactionController::class, 'printInvoice'])->name('sale-transaction.print-invoice');
+    Route::get('sale-transaction/search-products', [SaleTransactionController::class, 'searchProductsEdit'])->name('sale-transaction.search-products-edit');
 
     Route::resource('products', ProductController::class);
     Route::post('products/{id}/update', [ProductController::class, 'updates'])->name('products.updates');
