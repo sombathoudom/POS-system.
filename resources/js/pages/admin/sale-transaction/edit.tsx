@@ -73,6 +73,17 @@ export default function EditSaleTransaction({ saleTransaction, customers }: { sa
     const { data } = saleTransaction;
     const [productQuery, setProductQuery] = useState('');
     const [productSuggestions, setProductSuggestions] = useState<ProductResource[]>([]);
+    const [discount, setDiscount] = useState(data.discount);
+    const [shippingFee, setShippingFee] = useState(data.delivery_fee);
+    const [totalKhr, setTotalKhr] = useState(data.total_amount_khr);
+    const [totalUsd, setTotalUsd] = useState(data.total_amount_usd);
+    const [paymentStatus, setPaymentStatus] = useState(data.status);
+    const [orderDate, setOrderDate] = useState(new Date(data.transaction_date).toISOString().split('T')[0]);
+    const [customer, setCustomer] = useState(data.customer);
+    // const [subTotal, setSubTotal] = useState(0);
+    // const [subTotalKhr, setSubTotalKhr] = useState(0);
+    const [total, setTotal] = useState(0);
+
     const [details, setDetails] = useState<SaleTransactionDetail[]>(
         data.sale_transaction_details.map((item) => ({
             ...item,
@@ -88,6 +99,10 @@ export default function EditSaleTransaction({ saleTransaction, customers }: { sa
     };
 
     const updateQuantity = (idx: number, qty: number) => {
+        const subtotal = details[idx].unit_price * details[idx].quantity;
+        setTotalKhr(totalKhr - (subtotal - details[idx].unit_price * qty) * 4100);
+        setTotalUsd(totalUsd - (subtotal - details[idx].unit_price * qty));
+        setTotal(total - (subtotal - details[idx].unit_price * qty));
         setDetails((prev) =>
             prev.map((d, i) =>
                 i === idx
@@ -102,6 +117,9 @@ export default function EditSaleTransaction({ saleTransaction, customers }: { sa
     };
 
     const updateUnitPrice = (idx: number, price: number) => {
+        setTotalKhr(totalKhr - (details[idx].subtotal - price * details[idx].quantity) * 4100);
+        setTotalUsd(totalUsd - (details[idx].subtotal - price * details[idx].quantity));
+        setTotal(total - (details[idx].subtotal - price * details[idx].quantity));
         setDetails((prev) => prev.map((d, i) => (i === idx ? { ...d, unit_price: price, subtotal: price * d.quantity } : d)));
     };
     // Add new product from search
@@ -153,8 +171,8 @@ export default function EditSaleTransaction({ saleTransaction, customers }: { sa
                 variant_id: old ? old.variant_id : curr.variant_id,
                 old_quantity: old ? old.quantity : 0,
                 new_quantity: curr ? curr.quantity : 0,
-                unit_price: curr ? curr.unit_price : old ? old.unit_price : 0,
-                subtotal: curr ? curr.unit_price * curr.quantity : 0,
+                unit_price: curr ? Number(curr.unit_price) : old ? Number(old.unit_price) : 0,
+                subtotal: curr ? Number(curr.unit_price) * curr.quantity : 0,
             };
         });
         return sale_transaction_details;
@@ -165,6 +183,27 @@ export default function EditSaleTransaction({ saleTransaction, customers }: { sa
             sale_transaction_details: buildPayload(),
         };
         console.log('Payload:', payload);
+    };
+
+    // const calculateTotal = () => {
+    //     const total = details.reduce((acc, curr) => acc + curr.subtotal, 0);
+    //     setTotal(total);
+    //     setTotalKhr(total * 4100);
+    //     setTotalUsd(total);
+    // };
+
+    const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setDiscount(Number(e.target.value));
+        setTotalKhr(totalKhr - Number(e.target.value) * 4100);
+        setTotalUsd(totalUsd - Number(e.target.value));
+        setTotal(total - Number(e.target.value));
+    };
+
+    const handleShippingFeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setShippingFee(Number(e.target.value));
+        setTotalKhr(totalKhr - Number(e.target.value) * 4100);
+        setTotalUsd(totalUsd - Number(e.target.value));
+        setTotal(total + Number(e.target.value));
     };
     return (
         <AppLayout>
@@ -368,29 +407,38 @@ export default function EditSaleTransaction({ saleTransaction, customers }: { sa
                             <TableFooter>
                                 <TableRow>
                                     <TableCell colSpan={9} className="text-right">
-                                        Sub Total: {formatCurrency(details.reduce((acc, curr) => acc + curr.subtotal, 0))}
+                                        Sub Total: {formatCurrency(totalUsd)}
                                     </TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell colSpan={9} className="text-right">
-                                        Sub Total {formatCurrencyKHR(details.reduce((acc, curr) => acc + curr.subtotal * 4100, 0))}
+                                        Sub Total {formatCurrencyKHR(totalKhr)}
                                     </TableCell>
                                 </TableRow>
                             </TableFooter>
                         </Table>
                         <div className="grid grid-cols-3 gap-2 p-4">
                             <div className="flex flex-col gap-2">
-                                <Label>Discount</Label>
-                                <Input type="number" placeholder="Discount" value={Number(data.discount)} />
+                                <Label>Discount($)</Label>
+                                <Input type="number" placeholder="Discount" value={Number(discount)} onChange={handleDiscountChange} />
                             </div>
                             <div className="flex flex-col gap-2">
                                 <Label>Shipping Fee</Label>
-                                <Input type="number" placeholder="Shipping Fee" value={Number(data.delivery_fee)} />
+                                <Input type="number" placeholder="Shipping Fee" value={Number(shippingFee)} onChange={handleShippingFeeChange} />
                             </div>
                             <div className="flex flex-col gap-2">
                                 <Label>Total KHR</Label>
-                                <Input type="number" placeholder="Total KHR" value={Number(data.total_amount_khr)} />
+                                <Input
+                                    type="number"
+                                    placeholder="Total KHR"
+                                    value={Number(totalKhr)}
+                                    onChange={(e) => setTotalKhr(Number(e.target.value))}
+                                />
                             </div>
+                            {/* <div className="flex flex-col gap-2">
+                                <Label>Total USD</Label>
+                                <Input type="number" placeholder="Total USD" value={Number(totalUsd)} />
+                            </div> */}
                         </div>
                     </CardContent>
                     <CardFooter className="flex justify-end gap-2">

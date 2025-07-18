@@ -19,6 +19,7 @@ class SaleTransactionResource extends JsonResource
             'invoice_number' => $this->invoice_number,
             'customer' => $this->customer,
             'payment_status' => $this->status,
+            'discount' => $this->discount,
             'sale_transaction_details' => $this->saleTransactionDetails->map(function ($detail) {
                 $products = [];
                 if ($detail->variant) {
@@ -62,6 +63,7 @@ class SaleTransactionResource extends JsonResource
             'delivery_fee' => $this->delivery_fee,
             'transaction_date' => $this->transaction_date,
             'status' => $this->status,
+
         ];
     }
 }
