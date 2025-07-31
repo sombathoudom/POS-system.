@@ -13,6 +13,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\PosResource;
 use App\Models\SaleTransactionDetail;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class POSController extends Controller
 {
@@ -58,70 +60,86 @@ class POSController extends Controller
         try {
             // Start transaction using closure for auto commit/rollback
             return DB::transaction(function () use ($request) {
-                $products = $request->all();
+                $data = $request->all();
 
-                // 1. Create the sale transaction
+                // Step 1: Validate input
+                Validator::make($data, [
+                    'customer_id' => 'required|exists:customers,id',
+                    'status' => 'required|string',
+                    'total' => 'required|numeric|min:0',
+                    'total_khr' => 'required|numeric|min:0',
+                    'deliveryFee' => 'nullable|numeric|min:0',
+                    'discount' => 'nullable|numeric|min:0',
+                    'products' => 'required|array|min:1',
+                    'products.*.quantity' => 'required|integer|min:1',
+                    'products.*.price' => 'required|numeric|min:0',
+                    // 'products.*.id' => 'required_without:products.*.variant_id|integer',
+                    'products.*.variant_id' => 'required_without:products.*.variant_id|integer',
+                ])->validate();
+
+                // Step 2: Create sale transaction
                 $saleTransaction = SaleTransaction::create([
-                    'customer_id' => $products['customer_id'],
+                    'customer_id' => $data['customer_id'],
                     'invoice_number' => $this->generateInvoiceNumber(),
-                    'user_id' => 1,
-                    'status' => $products['status'],
+                    'user_id' =>  1,
+                    'status' => $data['status'],
                     'currency' => 'USD',
-                    'total_amount_usd' => $products['total'],
-                    'total_amount_khr' => $products['total_khr'],
-                    'delivery_fee' => $products['deliveryFee'],
-                    'total_discount' => $products['discount'],
+                    'total_amount_usd' => $data['total'],
+                    'total_amount_khr' => $data['total_khr'],
+                    'delivery_fee' => $data['deliveryFee'] ?? 0,
+                    'total_discount' => $data['discount'] ?? 0,
                     'transaction_date' => now('Asia/Phnom_Penh')->format('Y-m-d H:i:s'),
                 ]);
 
-                // 2. Aggregate by product/variant to prevent double deduction
-                $cartItems = collect($products['products'])
+                // Step 3: Group and aggregate products by ID
+                $cartItems = collect($data['products'])
                     ->groupBy(function ($item) {
-                        // Unique key by product or variant
                         return isset($item['variant_id'])
                             ? 'v_' . $item['variant_id']
                             : 'p_' . $item['id'];
                     })
                     ->map(function ($items) {
-                        // Sum quantities for duplicate items
                         $first = $items->first();
-                        $totalQty = $items->sum('quantity');
-                        $first['quantity'] = $totalQty;
+                        $first['quantity'] = $items->sum('quantity');
                         return $first;
-                    });
+                    })
+                    ->values(); // clean indexed array
 
-                // 3. Deduct stock and create transaction details
-                $cartItems->each(function ($product) use ($saleTransaction) {
-                    if (!isset($product['variant_id'])) {
-                        $productData = Product::where('product_id', $product['id'])
-                            ->lockForUpdate()
-                            ->first();
-                    } else {
-                        $productData = ProductVariant::where('variant_id', $product['variant_id'])
-                            ->lockForUpdate()
-                            ->first();
-                    }
+                // Step 4: Deduct stock and create transaction details
+                foreach ($cartItems as $product) {
+                    $isVariant = isset($product['variant_id']);
+
+                    $productData = $isVariant
+                        ? ProductVariant::where('variant_id', $product['variant_id'])->lockForUpdate()->first()
+                        : Product::where('product_id', $product['id'])->lockForUpdate()->first();
+
                     if (!$productData) {
-                        throw new \Exception('Product not found');
-                    }
-                    if ($productData->quantity < $product['quantity']) {
-                        throw new \Exception('Product quantity is not enough');
+                        throw new \Exception('Product or variant not found.');
                     }
 
-                    // Deduct stock
-                    $productData->quantity -= $product['quantity'];
-                    $productData->save();
+                    if ((int) $productData->quantity < (int) $product['quantity']) {
+                        throw new \Exception('Not enough stock for product: ' . ($isVariant ? 'Variant ID ' . $product['variant_id'] : 'Product ID ' . $product['id']));
+                    }
 
-                    // Record sale transaction detail
+                    // Deduct stock safely
+                    $productData->decrement('quantity', $product['quantity']);
+
+                    // Log stock deduction
+                    Log::info('Stock deducted', [
+                        'product' => $product,
+                        'remaining' => $productData->quantity,
+                    ]);
+
+                    // Create sale transaction detail
                     SaleTransactionDetail::create([
                         'sale_transaction_id' => $saleTransaction->transaction_id,
-                        'product_id' => isset($product['variant_id']) ? null : $productData->product_id,
-                        'variant_id' => isset($product['variant_id']) ? $product['variant_id'] : null,
+                        'product_id' => $isVariant ? null : $productData->product_id,
+                        'variant_id' => $isVariant ? $product['variant_id'] : null,
                         'quantity' => $product['quantity'],
                         'unit_price_usd' => $product['price'],
-                        'unit_price_khr' => $product['price'] * 4100,
+                        'unit_price_khr' => $product['price'] * 4100, // Optional: use dynamic rate
                     ]);
-                });
+                }
 
                 // 4. Return your desired response
                 return response()->json([
