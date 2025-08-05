@@ -73,8 +73,9 @@ class POSController extends Controller
                     'products' => 'required|array|min:1',
                     'products.*.quantity' => 'required|integer|min:1',
                     'products.*.price' => 'required|numeric|min:0',
-                    // 'products.*.id' => 'required_without:products.*.variant_id|integer',
-                    'products.*.variant_id' => 'required_without:products.*.variant_id|integer',
+                    'products.*.id' => 'nullable|required_without:products.*.variant_id|integer',
+                    'products.*.variant_id' => 'nullable|required_without:products.*.id|integer',
+
                 ])->validate();
 
                 // Step 2: Create sale transaction
@@ -94,7 +95,7 @@ class POSController extends Controller
                 // Step 3: Group and aggregate products by ID
                 $cartItems = collect($data['products'])
                     ->groupBy(function ($item) {
-                        return isset($item['variant_id'])
+                        return array_key_exists('variant_id', $item) && !is_null($item['variant_id'])
                             ? 'v_' . $item['variant_id']
                             : 'p_' . $item['id'];
                     })
@@ -107,8 +108,7 @@ class POSController extends Controller
 
                 // Step 4: Deduct stock and create transaction details
                 foreach ($cartItems as $product) {
-                    $isVariant = isset($product['variant_id']);
-
+                    $isVariant = array_key_exists('variant_id', $product) && !is_null($product['variant_id']);
                     $productData = $isVariant
                         ? ProductVariant::where('variant_id', $product['variant_id'])->lockForUpdate()->first()
                         : Product::where('product_id', $product['id'])->lockForUpdate()->first();

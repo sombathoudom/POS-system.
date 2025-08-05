@@ -40,7 +40,7 @@ class PosResource extends JsonResource
             if ($variant->quantity > 0) {
                 $products[] = [
                     'key' => Str::uuid(),
-                    'id' => $this->product_id . '-' . $variant->variant_id,
+                    'id' => $this->product_id,
                     'variant_id' => $variant->variant_id,
                     'name' => $this->product_name . ' [' . $variant->variant_code . ']',
                     'code' => $variant->variant_code,
