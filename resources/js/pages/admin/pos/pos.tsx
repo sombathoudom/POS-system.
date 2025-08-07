@@ -421,7 +421,7 @@ export default function POS({ productss }: POSProps) {
 
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5">
                         {productss?.data.map((product) => (
-                            <Card key={product.id} className="gap-4 overflow-hidden p-0">
+                            <Card key={product.key} className="gap-4 overflow-hidden p-0">
                                 <CardHeader className="p-0">
                                     <div className="aspect-square rounded-md">
                                         {product.image ? (
