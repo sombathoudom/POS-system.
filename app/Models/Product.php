@@ -49,4 +49,9 @@ class Product extends Model
     {
         return $this->type === 'variant';
     }
+
+    public function saleTransactionDetails()
+    {
+        return $this->hasMany(SaleTransactionDetail::class, 'product_id', 'product_id');
+    }
 }

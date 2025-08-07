@@ -33,4 +33,8 @@ class ProductVariant extends Model
     {
         return $this->morphMany(ProductImage::class, 'imageable');
     }
+    public function saleTransactionDetails()
+    {
+        return $this->hasMany(SaleTransactionDetail::class, 'variant_id', 'variant_id');
+    }
 }

@@ -20,19 +20,29 @@ class POSController extends Controller
 {
     public function index()
     {
-        $products = Product::with(['category', 'variants', 'images', 'variants.images'])->where(
+
+        $products = Product::with(['category', 'variants', 'images', 'variants.images','saleTransactionDetails'])->where(
             function ($query) {
+                $query->whereHas('saleTransactionDetails', function ($query) {
+                    $query->where('type', 'sale')
+                          ->where('calculation_type', 'decrease');
+                });
                 $query->where([
                     ['quantity', '>', 0],
                     ['deleted_at', null]
                 ])->orWhereHas('variants', function ($query) {
+                    $query->whereHas('saleTransactionDetails', function ($query) {
+                        $query->where('type', 'sale')
+                              ->where('calculation_type', 'decrease');
+                    });
                     $query->where([
                         ['quantity', '>', 0],
                         ['deleted_at', null]
                     ]);
                 });
             }
-        )->when(request()->search, function ($query) {
+        )
+        ->when(request()->search, function ($query) {
             $query->where('product_name', 'like', '%' . request()->search . '%')
                 ->orWhere('product_code', 'like', '%' . request()->search . '%')
                 ->orWhereHas('variants', function ($query) {
@@ -62,23 +72,6 @@ class POSController extends Controller
             return DB::transaction(function () use ($request) {
                 $data = $request->all();
 
-                // Step 1: Validate input
-                Validator::make($data, [
-                    'customer_id' => 'required|exists:customers,id',
-                    'status' => 'required|string',
-                    'total' => 'required|numeric|min:0',
-                    'total_khr' => 'required|numeric|min:0',
-                    'deliveryFee' => 'nullable|numeric|min:0',
-                    'discount' => 'nullable|numeric|min:0',
-                    'products' => 'required|array|min:1',
-                    'products.*.quantity' => 'required|integer|min:1',
-                    'products.*.price' => 'required|numeric|min:0',
-                    'products.*.id' => 'nullable|required_without:products.*.variant_id|integer',
-                    'products.*.variant_id' => 'nullable|required_without:products.*.id|integer',
-
-                ])->validate();
-
-                // Step 2: Create sale transaction
                 $saleTransaction = SaleTransaction::create([
                     'customer_id' => $data['customer_id'],
                     'invoice_number' => $this->generateInvoiceNumber(),
@@ -90,72 +83,50 @@ class POSController extends Controller
                     'delivery_fee' => $data['deliveryFee'] ?? 0,
                     'total_discount' => $data['discount'] ?? 0,
                     'transaction_date' => now('Asia/Phnom_Penh')->format('Y-m-d H:i:s'),
+                    // 'total_quantity' => $data['total_quantity'],
+                    'note' =>"POS Sale"
                 ]);
 
-                // Step 3: Group and aggregate products by ID
-                $cartItems = collect($data['products'])
-                    ->groupBy(function ($item) {
-                        return array_key_exists('variant_id', $item) && !is_null($item['variant_id'])
-                            ? 'v_' . $item['variant_id']
-                            : 'p_' . $item['id'];
-                    })
-                    ->map(function ($items) {
-                        $first = $items->first();
-                        $first['quantity'] = $items->sum('quantity');
-                        return $first;
-                    })
-                    ->values(); // clean indexed array
+                foreach ($data['products'] as $product) {
+                    $isVariant = isset($product['variant_id']) && $product['variant_id'] !== null;
 
-                // Step 4: Deduct stock and create transaction details
-                foreach ($cartItems as $product) {
-                    $isVariant = array_key_exists('variant_id', $product) && !is_null($product['variant_id']);
-                    $productData = $isVariant
-                        ? ProductVariant::where('variant_id', $product['variant_id'])->lockForUpdate()->first()
-                        : Product::where('product_id', $product['id'])->lockForUpdate()->first();
+                    // Optionally fetch for existence only (no lock, no decrement)
+                    $model = $isVariant
+                        ? ProductVariant::find($product['variant_id'])
+                        : Product::find($product['id']);
 
-                    if (!$productData) {
+                    if (!$model) {
                         throw new \Exception('Product or variant not found.');
                     }
 
-                    if ((int) $productData->quantity < (int) $product['quantity']) {
-                        throw new \Exception('Not enough stock for product: ' . ($isVariant ? 'Variant ID ' . $product['variant_id'] : 'Product ID ' . $product['id']));
-                    }
-
-                    // Deduct stock safely
-                    $productData->decrement('quantity', $product['quantity']);
-
-                    // Log stock deduction
-                    Log::info('Stock deducted', [
-                        'product' => $product,
-                        'remaining' => $productData->quantity,
-                    ]);
-
-                    // Create sale transaction detail
+                    // Create sale transaction detail with calculation_value = -quantity
                     SaleTransactionDetail::create([
                         'sale_transaction_id' => $saleTransaction->transaction_id,
-                        'product_id' => $isVariant ? null : $productData->product_id,
-                        'variant_id' => $isVariant ? $product['variant_id'] : null,
-                        'quantity' => $product['quantity'],
-                        'unit_price_usd' => $product['price'],
-                        'unit_price_khr' => $product['price'] * 4100, // Optional: use dynamic rate
+                        'product_id'          => $isVariant ? null : $model->product_id,
+                        'variant_id'          => $isVariant ? $model->variant_id : null,
+                        'quantity'            => $product['quantity'],               // positive count
+                        'calculation_value'   => -1 * $product['quantity'],          // negative adjustment
+                        'calculation_type'    => 'decrease',
+                        'unit_price_usd'      => $product['price'],
+                        'unit_price_khr'      => $product['price'] * 4100,
                     ]);
                 }
 
-                // 4. Return your desired response
+                // Step 5: return response as before
                 return response()->json([
-                    'message' => 'Sale products successfully',
-                    'data' => [
-                        'invoice_number' => $saleTransaction->invoice_number,
-                        'total_amount_usd' => $saleTransaction->total_amount_usd,
-                        'total_amount_khr' => $saleTransaction->total_amount_khr,
-                        'delivery_fee' => $saleTransaction->delivery_fee,
-                        'transaction_date' => Helpers::formatDate($saleTransaction->transaction_date),
-                        'products' => $cartItems->values(),
-                        'customer' => $saleTransaction->customer,
-                        'status' => $saleTransaction->status,
-                    ]
+                    'message' => 'Sale recorded successfully',
+                    'data'    => [
+                        'invoice_number'    => $saleTransaction->invoice_number,
+                        'total_amount_usd'  => $saleTransaction->total_amount_usd,
+                        'total_amount_khr'  => $saleTransaction->total_amount_khr,
+                        'delivery_fee'      => $saleTransaction->delivery_fee,
+                        'transaction_date'  => Helpers::formatDate($saleTransaction->transaction_date),
+                        'products'          => $data['products'],
+                        'customer'          => $saleTransaction->customer,
+                        'status'            => $saleTransaction->status,
+                    ],
                 ], 200);
-            }); // DB::transaction closure will auto-commit or rollback
+            });// DB::transaction closure will auto-commit or rollback
         } catch (\Throwable $th) {
             // Any error gets here, rollback already done
             return response()->json(['message' => $th->getMessage()], 500);

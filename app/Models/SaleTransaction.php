@@ -8,7 +8,7 @@ class SaleTransaction extends Model
 {
     //
     protected $primaryKey = 'transaction_id';
-    protected $fillable = ['customer_id', 'user_id', 'currency', 'total_amount_usd', 'total_amount_khr', 'delivery_fee', 'transaction_date', 'invoice_number', 'total_discount', 'status'];
+    protected $fillable = ['customer_id', 'user_id', 'currency', 'total_amount_usd', 'total_amount_khr', 'delivery_fee', 'transaction_date', 'invoice_number', 'total_discount', 'status', 'note', 'total_quantity'];
 
     public function customer()
     {
