@@ -19,7 +19,7 @@ class PosResource extends JsonResource
         $productImage = asset('storage/' . $this->images->first()?->path) ?? null;
 
         // Add the main product if it has quantity
-        if ($this->quantity > 0) {
+        if (($this->quantity + $this->effective_quantity) > 0) {
             $products[] = [
                 'key' => Str::uuid(),
                 'id' => $this->product_id,
@@ -31,13 +31,13 @@ class PosResource extends JsonResource
                 'type' => 'single',
                 'size' => $this->size,
                 'color' => $this->color,
-                'current_stock' => $this->quantity,
+                'current_stock' => $this->quantity + $this->effective_quantity,
             ];
         }
 
         // Add variants as separate products
         foreach ($this->variants as $variant) {
-            if ($variant->quantity > 0) {
+            if (($variant->quantity + $variant->effective_quantity) > 0) {
                 $products[] = [
                     'key' => Str::uuid(),
                     'id' => $this->product_id,
@@ -47,7 +47,7 @@ class PosResource extends JsonResource
                     'price' => $variant->sell_price_usd,
                     'image' => $variant->images->first()?->path ? asset('storage/' . $variant->images->first()?->path) : $productImage,
                     'type' => 'variant',
-                    'current_stock' => $variant->quantity,
+                    'current_stock' => $variant->quantity + $variant->effective_quantity,
                     'size' => $variant->size,
                     'color' => $variant->color,
                     'variant_name' => $this->product_name,

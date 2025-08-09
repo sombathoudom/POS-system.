@@ -10,6 +10,7 @@ use App\Models\SaleTransaction;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\SaleTransactionResource;
+use App\Models\SaleTransactionDetail;
 
 class SaleTransactionController extends Controller
 {
@@ -40,25 +41,44 @@ class SaleTransactionController extends Controller
     {
         try {
             DB::beginTransaction();
-            $saleTransaction = SaleTransaction::with('saleTransactionDetails', 'saleTransactionDetails.product', 'saleTransactionDetails.variant')->find($id);
+
+            $saleTransaction = SaleTransaction::with('saleTransactionDetails', 'saleTransactionDetails.product', 'saleTransactionDetails.variant')
+                ->find($id);
+
+            if (!$saleTransaction) {
+                throw new \Exception('Sale transaction not found');
+            }
+
+            if ($saleTransaction->status === 'cancelled') {
+                throw new \Exception('Sale transaction is already cancelled');
+            }
+
+            // Create offsetting transaction details for each item
             $saleTransaction->saleTransactionDetails->each(function ($detail) {
-                if ($detail->variant_id) {
-                    $variant = $detail->variant;
-                    $variant->quantity += $detail->quantity;
-                    $variant->save();
-                } else {
-                    $product = $detail->product;
-                    $product->quantity += $detail->quantity;
-                    $product->save();
-                }
+                // Create a new detail with positive calculation_value to offset the sale
+                SaleTransactionDetail::create([
+                    'sale_transaction_id' => $detail->sale_transaction_id,
+                    'product_id' => $detail->product_id,
+                    'variant_id' => $detail->variant_id,
+                    'quantity' => $detail->quantity,
+                    'calculation_value' => '+' . $detail->quantity, // Positive value to offset negative
+                    'calculation_type' => 'increase',
+                    'unit_price_usd' => $detail->unit_price_usd,
+                    'unit_price_khr' => $detail->unit_price_khr,
+                    'return_date' => now(),
+                    'type' => 'return'
+                ]);
             });
+
+            // Update transaction status
             $saleTransaction->status = 'cancelled';
             $saleTransaction->save();
+
             DB::commit();
             return to_route('sale-transaction.index')->with('success', 'Sale transaction marked as cancelled');
         } catch (\Throwable $th) {
             DB::rollBack();
-            return to_route('sale-transaction.index')->with('error', 'Sale transaction marked as cancelled');
+            return to_route('sale-transaction.index')->with('error', $th->getMessage());
         }
     }
 

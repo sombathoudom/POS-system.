@@ -21,36 +21,37 @@ class POSController extends Controller
     public function index()
     {
 
-        $products = Product::with(['category', 'variants', 'images', 'variants.images','saleTransactionDetails'])->where(
-            function ($query) {
-                $query->whereHas('saleTransactionDetails', function ($query) {
-                    $query->where('type', 'sale')
-                          ->where('calculation_type', 'decrease');
-                });
-                $query->where([
-                    ['quantity', '>', 0],
-                    ['deleted_at', null]
-                ])->orWhereHas('variants', function ($query) {
-                    $query->whereHas('saleTransactionDetails', function ($query) {
-                        $query->where('type', 'sale')
-                              ->where('calculation_type', 'decrease');
+        $products = Product::with(['category', 'variants', 'images', 'variants.images'])
+            ->select('products.*')
+            ->addSelect([
+                'effective_quantity' => SaleTransactionDetail::selectRaw('COALESCE(SUM(calculation_value), 0)')
+                    ->whereColumn('product_id', 'products.product_id')
+                    ->whereNull('variant_id')
+            ])
+            ->where(function ($query) {
+                $query->where('deleted_at', null)
+                    ->orWhereHas('variants', function ($query) {
+                        $query->where('deleted_at', null);
                     });
-                    $query->where([
-                        ['quantity', '>', 0],
-                        ['deleted_at', null]
-                    ]);
-                });
-            }
-        )
-        ->when(request()->search, function ($query) {
-            $query->where('product_name', 'like', '%' . request()->search . '%')
-                ->orWhere('product_code', 'like', '%' . request()->search . '%')
-                ->orWhereHas('variants', function ($query) {
-                    $query->Where('variant_code', 'like', '%' . request()->search . '%');
-                });
-        })->when(request()->category, function ($query) {
-            $query->where('category_id', request()->category);
-        })->latest()->paginate(10)->withQueryString();
+            })
+            ->when(request()->search, function ($query) {
+                $query->where('product_name', 'like', '%' . request()->search . '%')
+                    ->orWhere('product_code', 'like', '%' . request()->search . '%')
+                    ->orWhereHas('variants', function ($query) {
+                        $query->where('variant_code', 'like', '%' . request()->search . '%');
+                    });
+            })->when(request()->category, function ($query) {
+                $query->where('category_id', request()->category);
+            })->latest()->paginate(10)->withQueryString();
+
+        // Load effective quantity for variants
+        $products->getCollection()->each(function ($product) {
+            $product->variants->each(function ($variant) {
+                $effectiveQuantity = SaleTransactionDetail::where('variant_id', $variant->variant_id)
+                    ->sum('calculation_value');
+                $variant->effective_quantity = $effectiveQuantity;
+            });
+        });
 
         // Transform and flatten the products
         $flattenedProducts = $products->getCollection()->flatMap(function ($product) {
@@ -72,6 +73,33 @@ class POSController extends Controller
             return DB::transaction(function () use ($request) {
                 $data = $request->all();
 
+                // Validate stock for all products before processing
+                foreach ($data['products'] as $product) {
+                    $isVariant = isset($product['variant_id']) && $product['variant_id'] !== null;
+
+                    // Get the model and current stock
+                    $model = $isVariant
+                        ? ProductVariant::find($product['variant_id'])
+                        : Product::find($product['id']);
+
+                    if (!$model) {
+                        throw new \Exception('Product or variant not found.');
+                    }
+
+                    // Calculate effective stock
+                    $originalStock = $model->quantity;
+                    $totalSold = SaleTransactionDetail::where($isVariant ? 'variant_id' : 'product_id', $isVariant ? $model->variant_id : $model->product_id)
+                        ->sum('calculation_value');
+
+                    $effectiveStock = $originalStock + $totalSold;
+
+                    // Check if enough stock available
+                    if ($effectiveStock < $product['quantity']) {
+                        $productName = $isVariant ? $model->variant_code : $model->product_name;
+                        throw new \Exception("Insufficient stock for {$productName}. Available: {$effectiveStock}, Requested: {$product['quantity']}");
+                    }
+                }
+
                 $saleTransaction = SaleTransaction::create([
                     'customer_id' => $data['customer_id'],
                     'invoice_number' => $this->generateInvoiceNumber(),
@@ -83,21 +111,16 @@ class POSController extends Controller
                     'delivery_fee' => $data['deliveryFee'] ?? 0,
                     'total_discount' => $data['discount'] ?? 0,
                     'transaction_date' => now('Asia/Phnom_Penh')->format('Y-m-d H:i:s'),
-                    // 'total_quantity' => $data['total_quantity'],
-                    'note' =>"POS Sale"
+                    'note' => "POS Sale"
                 ]);
 
                 foreach ($data['products'] as $product) {
                     $isVariant = isset($product['variant_id']) && $product['variant_id'] !== null;
 
-                    // Optionally fetch for existence only (no lock, no decrement)
+                    // Model already validated in the check above
                     $model = $isVariant
                         ? ProductVariant::find($product['variant_id'])
                         : Product::find($product['id']);
-
-                    if (!$model) {
-                        throw new \Exception('Product or variant not found.');
-                    }
 
                     // Create sale transaction detail with calculation_value = -quantity
                     SaleTransactionDetail::create([
@@ -112,7 +135,7 @@ class POSController extends Controller
                     ]);
                 }
 
-                // Step 5: return response as before
+                // Return response as before
                 return response()->json([
                     'message' => 'Sale recorded successfully',
                     'data'    => [
@@ -126,7 +149,7 @@ class POSController extends Controller
                         'status'            => $saleTransaction->status,
                     ],
                 ], 200);
-            });// DB::transaction closure will auto-commit or rollback
+            }); // DB::transaction closure will auto-commit or rollback
         } catch (\Throwable $th) {
             // Any error gets here, rollback already done
             return response()->json(['message' => $th->getMessage()], 500);
