@@ -11,7 +11,7 @@ import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { Expense } from './index';
 
-interface ExpenseCategory {
+export interface ExpenseCategory {
     id: number;
     name: string;
 }

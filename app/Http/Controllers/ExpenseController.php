@@ -9,11 +9,26 @@ use App\Http\Requests\ExpenseRequest;
 
 class ExpenseController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $expenses = Expense::with('expenseCategory')->latest('expense_date')->paginate(10);
+        $expenses = Expense::with('expenseCategory')
+            ->latest('expense_date')
+            ->when($request->filled('expense_category_id'), function ($query) use ($request) {
+                $query->when($request->expense_category_id === 'all',
+                    fn($q) => $q->whereNotNull('expense_category_id'),
+                    fn($q) => $q->where('expense_category_id', $request->expense_category_id)
+                );
+            })
+            ->when($request->filled('start_date'), fn($query) =>
+                $query->whereDate('expense_date', '>=', $request->start_date)
+            )
+            ->when($request->filled('end_date'), fn($query) =>
+                $query->whereDate('expense_date', '<=', $request->end_date)
+            )
+            ->paginate(10)->withQueryString();
         return inertia('admin/expense/index', [
             'expenses' => $expenses,
+            'expenseCategories' => ExpenseCategory::all(),
         ]);
     }
 

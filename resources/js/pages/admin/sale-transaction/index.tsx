@@ -51,12 +51,15 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
             toast.success(flash.success);
         }
     }, [flash]);
+    const handleSearch = async () => {
+        await router.get(route('sale-transaction.index'), { search: search, status: statusFilter }, { preserveScroll: true, preserveState: true });
+    };
     return (
         <AppLayout>
             <Head title="Sale Transaction" />
             <div className="flex justify-between p-4">
                 <div className="flex items-center gap-2">
-                    <Select onValueChange={(value) => router.get(route('sale-transaction.index'), { status: value }, { preserveScroll: true })}>
+                    <Select onValueChange={(value) => setStatusFilter(value)}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select Status" />
                         </SelectTrigger>
@@ -70,7 +73,7 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
                     <Input type="text" placeholder="Search Customer" value={search} onChange={(e) => setSearch(e.target.value)} />
                     <Button
                         variant="outline"
-                        onClick={() => router.get(route('sale-transaction.index'), { search: search }, { preserveScroll: true, preserveState: true })}
+                        onClick={handleSearch}
                     >
                         <SearchIcon className="h-4 w-4" />
                         Search
@@ -141,7 +144,7 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
                 <CustPagination
                     currentPage={saleTransactions.current_page}
                     lastPage={saleTransactions.last_page}
-                    onPageChange={(page) => router.get(route('sale-transaction.index'), { page }, { preserveScroll: true, preserveState: true })}
+                    onPageChange={(page) => router.get(route('sale-transaction.index'), { page, search, status: statusFilter }, { preserveScroll: true, preserveState: true })}
                 />
             </div>
         </AppLayout>

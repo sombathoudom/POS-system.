@@ -22,7 +22,7 @@ class SaleTransactionController extends Controller
             });
         })->when($request->status, function ($query, $status) {
             $query->where('status', $status);
-        })->latest()->paginate(10);
+        })->latest()->paginate(10)->withQueryString();
 
         return Inertia::render('admin/sale-transaction/index', [
             'saleTransactions' => $saleTransactions,
