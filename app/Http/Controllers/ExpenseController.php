@@ -11,7 +11,7 @@ class ExpenseController extends Controller
 {
     public function index()
     {
-        $expenses = Expense::with('expenseCategory')->latest()->paginate(10);
+        $expenses = Expense::with('expenseCategory')->latest('expense_date')->paginate(10);
         return inertia('admin/expense/index', [
             'expenses' => $expenses,
         ]);
