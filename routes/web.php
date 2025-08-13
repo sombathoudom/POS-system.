@@ -13,8 +13,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SaleTransactionController;
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
-})->name('home');
+    return redirect('dashboard');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Route::get('dashboard', function () {
