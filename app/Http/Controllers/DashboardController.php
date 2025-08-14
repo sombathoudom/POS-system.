@@ -36,64 +36,10 @@ class DashboardController extends Controller
         $monthlySales = Cache::remember("monthly_sales_{$cacheKeySuffix}", 600, fn() => $this->getSalesBetween($monthStart, $now));
         $yearlySales = Cache::remember("yearly_sales_{$cacheKeySuffix}", 600, fn() => $this->getSalesBetween($yearStart, $now));
 
-        $filteredPaidSales = Cache::remember("filtered_paid_sales_{$cacheKeySuffix}", 600, fn() => $this->getSalesBetween($from, $to));
-
         $unpaidSales = Cache::remember("unpaid_sales_{$cacheKeySuffix}", 600, function () {
             return SaleTransaction::where('status', 'unpaid')
                 ->selectRaw('SUM(total_amount_usd) as total_amount, COUNT(*) as count')
                 ->first();
-        });
-
-        $topProducts = Cache::remember("top_products_{$cacheKeySuffix}", 600, function () use ($from, $to) {
-            return SaleTransactionDetail::whereHas('saleTransaction', function ($query) use ($from, $to) {
-                $query->where('status', 'paid')->whereBetween('created_at', [$from, $to]);
-            })
-                ->with(['product:product_id,product_name', 'variant:variant_id,variant_code'])
-                ->select('product_id', 'variant_id', DB::raw('SUM(quantity) as total_quantity'))
-                ->groupBy('product_id', 'variant_id')
-                ->orderByDesc('total_quantity')
-                ->take(5)
-                ->get()
-                ->map(function ($detail) {
-                    return [
-                        'label' => $detail->variant->variant_code ?? $detail->product->product_name ?? 'N/A',
-                        'quantity' => $detail->total_quantity,
-                    ];
-                });
-        });
-
-        $cogs = Cache::remember("cogs_{$cacheKeySuffix}", 600, function () use ($from, $to) {
-            return SaleTransactionDetail::whereHas('saleTransaction', function ($query) use ($from, $to) {
-                $query->where('status', 'paid')->whereBetween('created_at', [$from, $to]);
-            })
-                ->with(['product:product_id,cost_price_usd', 'variant:variant_id,cost_price_usd'])
-                ->get()
-                ->sum(function ($detail) {
-                    $cost = $detail->variant->cost_price_usd
-                        ?? $detail->product->cost_price_usd
-                        ?? 0;
-                    return $detail->quantity * $cost;
-                });
-        });
-
-        $expenses = Cache::remember("expenses_{$cacheKeySuffix}", 600, function () use ($from, $to) {
-            return Expense::whereBetween('expense_date', [$from, $to])->sum('amount');
-        });
-
-        $profitOrLoss = $filteredPaidSales - $cogs - $expenses;
-
-        $categorySalesToday = Cache::remember("category_sales_{$cacheKeySuffix}", 600, function () use ($from, $to) {
-            return DB::table('sale_transaction_details as std')
-                ->join('sale_transactions as st', 'st.transaction_id', '=', 'std.sale_transaction_id')
-                ->join('product_variants as pv', 'pv.variant_id', '=', 'std.variant_id')
-                ->join('products as p', 'p.product_id', '=', 'pv.product_id')
-                ->join('categories as c', 'c.category_id', '=', 'p.category_id')
-                ->where('st.status', 'paid')
-                ->whereBetween('st.created_at', [$from, $to])
-                ->select('c.category_id', 'c.category_name', DB::raw('SUM(std.quantity) as total_sold'))
-                ->groupBy('c.category_id', 'c.category_name')
-                ->orderByDesc('total_sold')
-                ->get();
         });
 
         return Inertia::render('dashboard', [
@@ -101,9 +47,9 @@ class DashboardController extends Controller
             'monthlySales' => $monthlySales,
             'yearlySales' => $yearlySales,
             'unpaidSales' => $unpaidSales,
-            'topProducts' => $topProducts,
-            'profitOrLoss' => $profitOrLoss,
-            'categorySalesToday' => $categorySalesToday,
+            'topProducts' => [],
+            'profitOrLoss' => 0,
+            'categorySalesToday' => [],
         ]);
     }
 
