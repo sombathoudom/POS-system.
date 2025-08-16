@@ -15,55 +15,134 @@ use App\Http\Resources\PosResource;
 use App\Models\SaleTransactionDetail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class POSController extends Controller
 {
     public function index()
     {
 
-        $products = Product::with(['category', 'variants', 'images', 'variants.images'])
-            ->select('products.*')
-            ->addSelect([
-                'effective_quantity' => SaleTransactionDetail::selectRaw('COALESCE(SUM(calculation_value), 0)')
-                    ->whereColumn('product_id', 'products.product_id')
-                    ->whereNull('variant_id')
-            ])
+        $testFilter = Product::with(['variants', 'images', 'variants.images'])
             ->where(function ($query) {
                 $query->where('deleted_at', null)
-                    ->orWhereHas('variants', function ($query) {
-                        $query->where('deleted_at', null);
+                    ->orWhereHas('variants', function ($q) {
+                        $q->where('deleted_at', null);
                     });
             })
             ->when(request()->search, function ($query) {
-                $query->where('product_name', 'like', '%' . request()->search . '%')
-                    ->orWhere('product_code', 'like', '%' . request()->search . '%')
-                    ->orWhereHas('variants', function ($query) {
-                        $query->where('variant_code', 'like', '%' . request()->search . '%');
-                    });
-            })->when(request()->category, function ($query) {
+                $query->where(function ($q) {
+                    $search = '%' . request()->search . '%';
+                    $q->where('product_name', 'like', $search)
+                        ->orWhere('product_code', 'like', $search)
+                        ->orWhereHas('variants', function ($sq) use ($search) {
+                            $sq->where('variant_code', 'like', $search);
+                        });
+                });
+            })
+            ->when(request()->category, function ($query) {
                 $query->where('category_id', request()->category);
-            })->latest()->paginate(10)->withQueryString();
-
-        // Load effective quantity for variants
-        $products->getCollection()->each(function ($product) {
-            $product->variants->each(function ($variant) {
-                $effectiveQuantity = SaleTransactionDetail::where('variant_id', $variant->variant_id)
-                    ->sum('calculation_value');
-                $variant->effective_quantity = $effectiveQuantity;
             });
-        });
 
-        // Transform and flatten the products
-        $flattenedProducts = $products->getCollection()->flatMap(function ($product) {
-            return (new PosResource($product))->toArray(request());
-        });
+        $totalRows = $testFilter->count();
+        $productData = $testFilter->offset((request()->input('page', 1) - 1) * 10);
+        $productData = $productData->limit(10)->get();
 
-        // Create a new collection with the flattened products
-        $products->setCollection($flattenedProducts);
+        $array = [];
+
+        foreach ($productData as $product) {
+            $item = [
+                'id'       => $product->product_id,
+                'type'     => $product->type,
+                'key' => Str::uuid(),
+                'name'     => $product->product_name,
+                'size' => $product->size,
+                'color' => $product->color,
+                'code'     => $product->product_code,
+                'price'    => $product->sell_price_usd,
+                'image' => $product->images->first()?->path ? asset('storage/' . $product->images->first()?->path) : null,
+                'current_stock' => (int) $product->quantity
+                    + (int) SaleTransactionDetail::where('product_id', $product->product_id)
+                        ->whereNull('variant_id')
+                        ->sum(DB::raw('CAST(calculation_value AS SIGNED)')),
+                'variants' => [],
+            ];
+
+            if ($product->type === 'variant') {
+                foreach ($product->variants as $variant) {
+                    $qty = (int) $variant->quantity
+                        + (int) SaleTransactionDetail::where('variant_id', $variant->variant_id)
+                            ->sum(DB::raw('CAST(calculation_value AS SIGNED)'));
+                    if ($qty > 0) {
+                        $item['variants'][] = [
+                            'id'       => $variant->variant_id,
+                            'type'     => $product->type,
+                            'variant_id' => $variant->variant_id,
+                            'size' => $variant->size,
+                            'color' => $variant->color,
+                            'key' => Str::uuid(),
+                            'image' => $variant->images->first()?->path ? asset('storage/' . $variant->images->first()?->path) : null,
+                            'name'     => $variant->variant_code,
+                            'code'     => $variant->variant_code,
+                            'price'    => $variant->sell_price_usd,
+                            'current_stock' => $qty,
+                        ];
+                    }
+                }
+            }
+
+            // if you only want to include products that have any stock:
+            if ($item['current_stock'] > 0 || count($item['variants']) > 0) {
+                $array[] = $item;
+            }
+        }
 
         return Inertia::render('admin/pos/pos', [
-            'productss' => $products
+            'productss' => $array,
+            'totalRows' => $totalRows,
         ]);
+        // $products = Product::with(['category', 'variants', 'images', 'variants.images'])
+        //     ->select('products.*')
+        //     ->addSelect([
+        //         'effective_quantity' => SaleTransactionDetail::selectRaw('COALESCE(SUM(calculation_value), 0)')
+        //             ->whereColumn('product_id', 'products.product_id')
+        //             ->whereNull('variant_id')
+        //     ])
+        //     ->where(function ($query) {
+        //         $query->where('deleted_at', null)
+        //             ->orWhereHas('variants', function ($query) {
+        //                 $query->where('deleted_at', null);
+        //             });
+        //     })
+        //     ->when(request()->search, function ($query) {
+        //         $query->where('product_name', 'like', '%' . request()->search . '%')
+        //             ->orWhere('product_code', 'like', '%' . request()->search . '%')
+        //             ->orWhereHas('variants', function ($query) {
+        //                 $query->where('variant_code', 'like', '%' . request()->search . '%');
+        //             });
+        //     })->when(request()->category, function ($query) {
+        //         $query->where('category_id', request()->category);
+        //     })->latest()->paginate(10)->withQueryString();
+
+        // // Load effective quantity for variants
+        // $products->getCollection()->each(function ($product) {
+        //     $product->variants->each(function ($variant) {
+        //         $effectiveQuantity = SaleTransactionDetail::where('variant_id', $variant->variant_id)
+        //             ->sum('calculation_value');
+        //         $variant->effective_quantity = $effectiveQuantity;
+        //     });
+        // });
+
+        // // Transform and flatten the products
+        // $flattenedProducts = $products->getCollection()->flatMap(function ($product) {
+        //     return (new PosResource($product))->toArray(request());
+        // });
+
+        // // Create a new collection with the flattened products
+        // $products->setCollection($flattenedProducts);
+
+        // return Inertia::render('admin/pos/pos', [
+        //     'productss' => $products
+        // ]);
     }
 
     public function saleProducts(Request $request)

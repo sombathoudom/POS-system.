@@ -48,6 +48,20 @@ interface Variant {
     stock: number;
 }
 
+interface Variant {
+    key: string;
+    id: number;
+    name: string;
+    price: number;
+    code: string;
+    size: string;
+    color: string;
+    image: string;
+    category_id: number;
+    type: 'single' | 'variant';
+    variant_id: number;
+    current_stock: number;
+}
 interface Product {
     key: string;
     id: number | string;
@@ -59,9 +73,9 @@ interface Product {
     image: string;
     category_id: number;
     type: 'single' | 'variant';
-    current_stock: number;
     variant_id: number;
-    quantity?: number;
+    current_stock: number;
+    variants: Variant[];
 }
 
 interface CartItem extends Product {
@@ -81,14 +95,13 @@ export interface Invoice {
     products: Product[];
 }
 export interface POSProps {
-    productss?: {
-        data: Product[];
-        current_page: number;
-        last_page: number;
-    };
+    productss: Product[];
+    totalRows: number;
 }
 
-export default function POS({ productss }: POSProps) {
+export default function POS(props: POSProps) {
+    const { productss, totalRows } = props;
+    console.log(productss);
     const { categories } = usePage<PageProps>().props;
     const [customerButton, setCustomerButton] = useState<boolean>(false);
     const [customers, setCustomers] = useState<Customer[]>([]);
@@ -420,51 +433,55 @@ export default function POS({ productss }: POSProps) {
                     </div>
 
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5">
-                        {productss?.data.map((product) => (
-                            <Card key={product.key} className="gap-4 overflow-hidden p-0">
-                                <CardHeader className="p-0">
-                                    <div className="aspect-square rounded-md">
-                                        {product.image ? (
-                                            <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
-                                        ) : (
-                                            <div className="flex h-full w-full items-center justify-center bg-gray-200">
-                                                <p className="text-sm text-gray-500">No image</p>
+                        {productss.map((product) => (
+                            <>
+                                {product.variants.map((variant) => (
+                                    <Card key={variant.key} className="gap-4 overflow-hidden p-0">
+                                        <CardHeader className="p-0">
+                                            <div className="aspect-square rounded-md">
+                                                {variant.image ? (
+                                                    <img src={variant.image} alt={variant.name} className="h-full w-full object-cover" />
+                                                ) : (
+                                                    <div className="flex h-full w-full items-center justify-center bg-gray-200">
+                                                        <p className="text-sm text-gray-500">No image</p>
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-2 px-2">
-                                    <h3 className="line-clamp-2 text-sm font-semibold">{product.name}</h3>
-                                    <p className="flex items-center gap-2 text-xs text-gray-500">
-                                        <Barcode size={12} />
-                                        {product.code}
-                                    </p>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <Badge variant="outline">
-                                            <Package />
-                                            {product.current_stock}
-                                        </Badge>
-                                        <Badge variant="outline">
-                                            <Shirt />
-                                            {product.size}
-                                        </Badge>
-                                        <Badge variant="outline">
-                                            <Paintbrush />
-                                            {product.color}
-                                        </Badge>
-                                        <Badge variant="outline">
-                                            <DollarSign />
-                                            {formatCurrency(product.price)}
-                                        </Badge>
-                                    </div>
-                                </CardContent>
-                                <CardFooter className="p-3 pt-0">
-                                    <Button onClick={() => addToCart(product)} className="w-full text-xs" size="sm">
-                                        <Plus />
-                                        Add to Cart
-                                    </Button>
-                                </CardFooter>
-                            </Card>
+                                        </CardHeader>
+                                        <CardContent className="space-y-2 px-2">
+                                            <h3 className="line-clamp-2 text-sm font-semibold">{variant.name}</h3>
+                                            <p className="flex items-center gap-2 text-xs text-gray-500">
+                                                <Barcode size={12} />
+                                                {variant.code}
+                                            </p>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <Badge variant="outline">
+                                                    <Package />
+                                                    {variant.current_stock}
+                                                </Badge>
+                                                <Badge variant="outline">
+                                                    <Shirt />
+                                                    {variant.size}
+                                                </Badge>
+                                                <Badge variant="outline">
+                                                    <Paintbrush />
+                                                    {variant.color}
+                                                </Badge>
+                                                <Badge variant="outline">
+                                                    <DollarSign />
+                                                    {formatCurrency(variant.price)}
+                                                </Badge>
+                                            </div>
+                                        </CardContent>
+                                        <CardFooter className="p-3 pt-0">
+                                            <Button onClick={() => addToCart(variant)} className="w-full text-xs" size="sm">
+                                                <Plus />
+                                                Add to Cart
+                                            </Button>
+                                        </CardFooter>
+                                    </Card>
+                                ))}
+                            </>
                         ))}
                     </div>
                     <div className="mt-4">
