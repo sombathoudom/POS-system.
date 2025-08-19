@@ -9,7 +9,7 @@ import AppLayout from '@/layouts/app-layout';
 import { PageProps } from '@/types';
 import formatCurrency from '@/utils/formatCurrency';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { EyeIcon, PencilIcon, PrinterIcon, SearchIcon } from 'lucide-react';
+import { EyeIcon, PencilIcon, PrinterIcon, SearchIcon, XIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -41,7 +41,7 @@ interface SaleTransactionResource {
 export default function SaleTransaction({ saleTransactions }: { saleTransactions: SaleTransactionResource }) {
     const { flash } = usePage<PageProps>().props;
     const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState('');
 
     const handleOpenNewTab = (url: string) => {
         window.open(url, '_blank');
@@ -77,6 +77,17 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
                     >
                         <SearchIcon className="h-4 w-4" />
                         Search
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        onClick={() => {
+                            setStatusFilter('');
+                            setSearch('');
+                            router.get(route('sale-transaction.index'), { search: '', status: '' }, { preserveScroll: true, preserveState: true });
+                        }}
+                    >
+                        <XIcon className="h-4 w-4" />
+                        Reset Filter
                     </Button>
                 </div>
             </div>
