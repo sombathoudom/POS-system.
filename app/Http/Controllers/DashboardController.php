@@ -71,6 +71,27 @@ class DashboardController extends Controller
             return $grossProfit - $expenses; // Net Profit = Gross Profit - Expenses
         });
 
+        $monthlySaleChart = Cache::remember("monthly_sale_{$cacheKeySuffix}", 3600, function () {
+            return  SaleTransaction::where('status', 'paid')
+            ->whereBetween('transaction_date', [Carbon::now()->startOfYear(), Carbon::now()->endOfYear()])
+            ->selectRaw('
+                MONTH(transaction_date) as month_number,
+                MONTHNAME(transaction_date) as month_name,
+                SUM(total_amount_usd) as total_amount,
+                COUNT(*) as count
+            ')
+            ->groupBy('month_number', 'month_name')
+            ->orderBy('month_number')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'month' => $item->month_name,
+                    'total_amount' => $item->total_amount,
+                    'count' => $item->count,
+                ];
+            });
+        });
+
         return Inertia::render('dashboard', [
             'dailySales' => $dailySales,
             'monthlySales' => $monthlySales,
@@ -78,6 +99,7 @@ class DashboardController extends Controller
             'unpaidSales' => $unpaidSales,
             'totalOrders' => $totalOrders,
             'revenue' => $netProfit,
+            'monthlySaleChart' => $monthlySaleChart,
         ]);
     }
 

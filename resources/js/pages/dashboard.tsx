@@ -8,8 +8,13 @@ import { formatCurrency } from '@/lib/utils';
 import { Head, router } from '@inertiajs/react';
 import { BarChart2, DollarSign, SearchIcon, ShoppingCart, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
-
+import { MonthlySaleChart } from '@/components/charts/monthly-sale-chart';
 // Define the shape of a product for topProducts
+export interface MonthlySaleChart {
+    month: string;
+    // total_amount: number;
+    count: number;
+}
 interface DashboardProps {
     dailySales: number;
     monthlySales: number;
@@ -20,7 +25,7 @@ interface DashboardProps {
         count: number | null;
     };
     revenue: number;
-
+    monthlySaleChart: MonthlySaleChart[];
 }
 
 // Utility function to format currency
@@ -32,6 +37,7 @@ export default function Dashboard({
     totalOrders,
     unpaidSales,
     revenue,
+    monthlySaleChart,
 }: DashboardProps) {
 
     const [selectedDateRange, setSelectedDateRange] = useState({
@@ -73,6 +79,9 @@ export default function Dashboard({
                     {/* Yearly Sales Card */}
                     <DashboardCard title="Yearly Sales" value={yearlySales} icon={<BarChart2 className="h-5 w-5 text-purple-500" />} description={`Sales for ${new Date().getFullYear()}`} />
                     <DashboardCard title="Unpaid Sales" value={Number(unpaidSales.total_amount || 0)} icon={<DollarSign className="h-5 w-5 text-red-500" />} description={`Unpaid sales for ${new Date().toLocaleDateString()}`} />
+                </div>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <MonthlySaleChart data={monthlySaleChart} />
                 </div>
             </div>
         </AppLayout>
