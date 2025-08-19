@@ -51,8 +51,8 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
             toast.success(flash.success);
         }
     }, [flash]);
-    const handleSearch = async () => {
-        await router.get(route('sale-transaction.index'), { search: search, status: statusFilter }, { preserveScroll: true, preserveState: true });
+    const handleSearch =  () => {
+         router.get(route('sale-transaction.index'), { search: search, status: statusFilter }, { preserveScroll: true, preserveState: true });
     };
     return (
         <AppLayout>

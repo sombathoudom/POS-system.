@@ -1,0 +1,33 @@
+import React from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { formatCurrency } from '@/lib/utils';
+
+interface DashboardCardProps {
+    title: string;
+    value: number;
+    icon: React.ReactNode;
+    description?: string;
+}
+export default function DashboardCard({ title, value, icon, description = '' }: DashboardCardProps) {
+    return (
+        <Card className="group border border-gray-200/60 bg-white/80 backdrop-blur-sm transition-all duration-200 hover:border-gray-300/80 hover:bg-white hover:shadow-lg dark:border-gray-700/60 dark:bg-gray-900/80 dark:hover:border-gray-600/80 dark:hover:bg-gray-900">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                    {title}
+                </CardTitle>
+                <div className="text-gray-400 transition-colors duration-200 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300">
+                    {icon}
+                </div>
+            </CardHeader>
+
+            <CardContent className="space-y-1">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {value}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {description}
+                </p>
+            </CardContent>
+        </Card>
+    );
+}

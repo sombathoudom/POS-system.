@@ -42,14 +42,42 @@ class DashboardController extends Controller
                 ->first();
         });
 
+        $totalOrders = Cache::remember("total_orders_{$cacheKeySuffix}", 600, function () use ($from, $to) {
+            return SaleTransaction::where('status', 'paid')
+                ->whereBetween('transaction_date', [$from, $to])
+                ->count();
+        });
+
+        $grossProfit = Cache::remember("gross_profit_{$cacheKeySuffix}", 600, function () use ($from, $to) {
+            $sales = SaleTransaction::where('status', 'paid')
+                ->whereBetween('transaction_date', [$from, $to])
+                ->sum('total_amount_usd');
+
+            $cogs = SaleTransactionDetail::whereHas('saleTransaction', function ($query) {
+                $query->where('status', 'paid');
+            })
+            ->whereBetween('created_at', [$from, $to])
+            ->with(['product:product_id,cost_price_usd', 'variant:variant_id,cost_price_usd'])
+            ->get()
+            ->sum(function ($detail) {
+                $cost = $detail->variant->cost_price_usd ?? $detail->product->cost_price_usd ?? 0;
+                return $detail->quantity * $cost;
+            });
+            return $sales - $cogs; // Gross Profit
+        });
+
+        $netProfit = Cache::remember("net_profit_{$cacheKeySuffix}", 600, function () use ($from, $to, $grossProfit) {
+            $expenses = Expense::whereBetween('expense_date', [$from, $to])->sum('amount');
+            return $grossProfit - $expenses; // Net Profit = Gross Profit - Expenses
+        });
+
         return Inertia::render('dashboard', [
             'dailySales' => $dailySales,
             'monthlySales' => $monthlySales,
             'yearlySales' => $yearlySales,
             'unpaidSales' => $unpaidSales,
-            'topProducts' => [],
-            'profitOrLoss' => 0,
-            'categorySalesToday' => [],
+            'totalOrders' => $totalOrders,
+            'revenue' => $netProfit,
         ]);
     }
 
