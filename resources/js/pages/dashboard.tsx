@@ -1,10 +1,7 @@
 import { CalendarDatePicker } from '@/components/calendar-date-picker';
 import DashboardCard from '@/components/dashboard-card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { formatCurrency } from '@/lib/utils';
 import { Head, router } from '@inertiajs/react';
 import { BarChart2, DollarSign, SearchIcon, ShoppingCart, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
