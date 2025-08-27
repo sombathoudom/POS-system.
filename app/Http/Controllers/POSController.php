@@ -22,83 +22,69 @@ class POSController extends Controller
     public function index()
     {
 
-        $testFilter = Product::with(['variants', 'images', 'variants.images'])
-            ->where(function ($query) {
-                $query->where('deleted_at', null)
-                    ->orWhereHas('variants', function ($q) {
-                        $q->where('deleted_at', null);
-                    });
+        $sv = DB::table('sale_transaction_details')
+            ->select('variant_id', DB::raw('SUM(calculation_value) AS sold'))
+            ->whereNotNull('variant_id')
+            ->groupBy('variant_id');
+
+        // subquery: sum sold by single product (no variant)
+        $sp = DB::table('sale_transaction_details')
+            ->select('product_id', DB::raw('SUM(calculation_value) AS sold'))
+            ->whereNull('variant_id')
+            ->groupBy('product_id');
+
+        // variants part
+        $variants = DB::table('products as p')
+            ->join('product_variants as pv', 'pv.product_id', '=', 'p.product_id')
+            ->leftJoinSub($sv, 'sv', function ($join) {
+                $join->on('sv.variant_id', '=', 'pv.variant_id');
             })
-            ->when(request()->search, function ($query) {
-                $query->where(function ($q) {
-                    $search = '%' . request()->search . '%';
-                    $q->where('product_name', 'like', $search)
-                        ->orWhere('product_code', 'like', $search)
-                        ->orWhereHas('variants', function ($sq) use ($search) {
-                            $sq->where('variant_code', 'like', $search);
-                        });
-                });
+            ->whereNull('p.deleted_at')
+            ->whereNull('pv.deleted_at')
+            ->where('p.type', 'variant')
+            ->select([
+                'p.product_id',
+                'p.product_code',
+                DB::raw('p.product_name AS product_name'),
+                'p.type',
+                'pv.variant_id',
+                DB::raw('pv.variant_code AS variant_code'),
+                'pv.size',
+                'pv.color',
+                DB::raw('pv.sell_price_usd AS sell_price_usd'),
+                DB::raw('pv.quantity AS on_hand'),
+                DB::raw('CAST(pv.quantity - COALESCE(sv.sold, 0) AS SIGNED) AS current_stock'),
+            ]);
+
+        // singles part
+        $singles = DB::table('products as p')
+            ->leftJoinSub($sp, 'sp', function ($join) {
+                $join->on('sp.product_id', '=', 'p.product_id');
             })
-            ->when(request()->category, function ($query) {
-                $query->where('category_id', request()->category);
-            });
+            ->whereNull('p.deleted_at')
+            ->where('p.type', 'single')
+            ->select([
+                'p.product_id',
+                'p.product_code',
+                DB::raw('p.product_name AS product_name'),
+                'p.type',
+                DB::raw('NULL AS variant_id'),
+                DB::raw('NULL AS variant_code'),
+                'p.size',
+                'p.color',
+                DB::raw('p.sell_price_usd AS sell_price_usd'),
+                DB::raw('p.quantity AS on_hand'),
+                DB::raw('CAST(p.quantity - COALESCE(sp.sold, 0) AS SIGNED) AS current_stock'),
+            ]);
 
-        $totalRows = $testFilter->count();
-        $productData = $testFilter->offset((request()->input('page', 1) - 1) * 10);
-        $productData = $productData->limit(10)->get();
-
-        $array = [];
-
-        foreach ($productData as $product) {
-            $item = [
-                'id'       => $product->product_id,
-                'type'     => $product->type,
-                'key' => Str::uuid(),
-                'name'     => $product->product_name,
-                'size' => $product->size,
-                'color' => $product->color,
-                'code'     => $product->product_code,
-                'price'    => $product->sell_price_usd,
-                'image' => $product->images->first()?->path ? asset('storage/' . $product->images->first()?->path) : null,
-                'current_stock' => (int) $product->quantity
-                    + (int) SaleTransactionDetail::where('product_id', $product->product_id)
-                        ->whereNull('variant_id')
-                        ->sum(DB::raw('CAST(calculation_value AS SIGNED)')),
-                'variants' => [],
-            ];
-
-            if ($product->type === 'variant') {
-                foreach ($product->variants as $variant) {
-                    $qty = (int) $variant->quantity
-                        + (int) SaleTransactionDetail::where('variant_id', $variant->variant_id)
-                            ->sum(DB::raw('CAST(calculation_value AS SIGNED)'));
-                    if ($qty > 0) {
-                        $item['variants'][] = [
-                            'id'       => $variant->variant_id,
-                            'type'     => $product->type,
-                            'variant_id' => $variant->variant_id,
-                            'size' => $variant->size,
-                            'color' => $variant->color,
-                            'key' => Str::uuid(),
-                            'image' => $variant->images->first()?->path ? asset('storage/' . $variant->images->first()?->path) : null,
-                            'name'     => $variant->variant_code,
-                            'code'     => $variant->variant_code,
-                            'price'    => $variant->sell_price_usd,
-                            'current_stock' => $qty,
-                        ];
-                    }
-                }
-            }
-
-            // if you only want to include products that have any stock:
-            if ($item['current_stock'] > 0 || count($item['variants']) > 0) {
-                $array[] = $item;
-            }
-        }
-
+        // final union
+        $results = DB::query()
+            ->fromSub($variants->unionAll($singles), 'stock')
+            ->where('stock.current_stock', '>', 0)
+            ->get();
+        dd($results);
         return Inertia::render('admin/pos/pos', [
-            'productss' => $array,
-            'totalRows' => $totalRows,
+            'products' =>  $results
         ]);
         // $products = Product::with(['category', 'variants', 'images', 'variants.images'])
         //     ->select('products.*')
