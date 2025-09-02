@@ -467,7 +467,8 @@ export default function FormPurchase({ suppliers }: { suppliers: Supplier[] }) {
                                     </Table>
                                 </div>
 
-                                <div className="mt-4 flex justify-end">
+                                <div className="mt-4 flex flex-col gap-2 justify-self-end">
+                                    <div className="text-xl font-bold">Total Qty: {products.reduce((sum, product) => sum + product.quantity, 0)}</div>
                                     <div className="text-xl font-bold">Total Amount: ${data.total_amount.toFixed(2)}</div>
                                 </div>
 
