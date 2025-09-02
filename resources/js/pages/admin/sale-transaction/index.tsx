@@ -28,6 +28,7 @@ interface SaleTransaction {
 interface Customer {
     id: number;
     name: string;
+    phone: string;
 }
 
 interface SaleTransactionResource {
@@ -118,7 +119,9 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
                         {saleTransactions.data.map((saleTransaction) => (
                             <TableRow key={saleTransaction.transaction_id}>
                                 <TableCell>{saleTransaction.invoice_number}</TableCell>
-                                <TableCell>{saleTransaction.customer.name}</TableCell>
+                                <TableCell>
+                                    {saleTransaction.customer.name} | {saleTransaction.customer?.phone}
+                                </TableCell>
                                 <TableCell>{saleTransaction.transaction_date}</TableCell>
                                 <TableCell>{formatCurrency(saleTransaction.total_amount_khr, 'KHR')}</TableCell>
                                 <TableCell>{formatCurrency(saleTransaction.total_amount_usd, 'USD')}</TableCell>
