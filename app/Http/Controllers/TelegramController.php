@@ -20,10 +20,10 @@ class TelegramController extends Controller
         }
 
         $chatId = $message->getChat()->getId();
-        $text = trim($message->getText());
+        $text   = trim($message->getText());
 
         try {
-            // Expected format: "YYYY-MM-DD Name Category Amount"
+            // Format: "YYYY-MM-DD Name Category Amount"
             $parts = explode(" ", $text, 4);
 
             if (count($parts) < 4) {
@@ -34,29 +34,28 @@ class TelegramController extends Controller
                 return;
             }
 
-            [$date, $name, $category, $amount] = $parts;
+            [$date, $name, $categoryName, $amount] = $parts;
 
+            $category = ExpenseCategory::where('name', 'like', '%' . $categoryName . '%')->first();
 
-        $category = ExpenseCategory::where('name', 'like', '%' . $category . '%')->first();
-
-        if (!$category) {
-            $telegram->sendMessage([
-                'chat_id' => $chatId,
-                'text' => "❌ Category '{$categoryName}' not found!"
-            ]);
-            return;
-        }
+            if (!$category) {
+                $telegram->sendMessage([
+                    'chat_id' => $chatId,
+                    'text' => "❌ Category '{$categoryName}' not found!"
+                ]);
+                return;
+            }
 
             $expense = Expense::create([
-                'expense_date'      => $date,
-                'name'             => $name,
-                'expense_category_id'  => $category->id,
-                'amount'           => (float) $amount,
+                'expense_date'        => $date,
+                'name'                => $name,
+                'expense_category_id' => $category->id,
+                'amount'              => (float) $amount,
             ]);
 
             $telegram->sendMessage([
                 'chat_id' => $chatId,
-                'text' => "✅ Expense created!\n\n📅 Date: {$expense->expenseDate}\n📝 Name: {$expense->name}\n📂 Category: {$expense->expenseCategory}\n💰 Amount: {$expense->amount}"
+                'text' => "✅ Expense created!\n\n📅 Date: {$expense->expense_date}\n📝 Name: {$expense->name}\n📂 Category: {$category->name}\n💰 Amount: {$expense->amount}"
             ]);
 
         } catch (\Exception $e) {
@@ -68,4 +67,5 @@ class TelegramController extends Controller
 
         return response()->json(['status' => 'ok']);
     }
+
 }
