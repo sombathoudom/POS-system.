@@ -42,7 +42,7 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
     const { flash } = usePage<PageProps>().props;
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
-
+    const [pages, setPage] = useState(1);
     const handleOpenNewTab = (url: string) => {
         window.open(url, '_blank');
     };
@@ -51,8 +51,21 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
             toast.success(flash.success);
         }
     }, [flash]);
-    const handleSearch =  () => {
-         router.get(route('sale-transaction.index'), { search: search, status: statusFilter }, { preserveScroll: true, preserveState: true });
+    const handleSearch = () => {
+        router.get(route('sale-transaction.index'), { search: search, status: statusFilter }, { preserveScroll: true, preserveState: true });
+    };
+    const handleMarkAsPaid = (id: number) => {
+        router.post(route('sale-transaction.markAsPaid', { id }), { preserveScroll: true, preserveState: true });
+    };
+    const handleMarkAsCancelled = (id: number) => {
+        router.post(route('sale-transaction.markAsCancelled', { id }), {
+            preserveScroll: true,
+            preserveState: true,
+        });
+    };
+    const handlePageChange = (page: number) => {
+        setPage(page);
+        router.get(route('sale-transaction.index'), { page, search, status: statusFilter }, { preserveScroll: true, preserveState: true });
     };
     return (
         <AppLayout>
@@ -71,10 +84,7 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
                         </SelectContent>
                     </Select>
                     <Input type="text" placeholder="Search Customer" value={search} onChange={(e) => setSearch(e.target.value)} />
-                    <Button
-                        variant="outline"
-                        onClick={handleSearch}
-                    >
+                    <Button variant="outline" onClick={handleSearch}>
                         <SearchIcon className="h-4 w-4" />
                         Search
                     </Button>
@@ -145,7 +155,11 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
                                             </Link>
                                         </Button>
 
-                                        <TransactionStatusButtons saleTransaction={saleTransaction} />
+                                        <TransactionStatusButtons
+                                            saleTransaction={saleTransaction}
+                                            markAsPaid={handleMarkAsPaid}
+                                            markAsCancelled={handleMarkAsCancelled}
+                                        />
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -155,7 +169,7 @@ export default function SaleTransaction({ saleTransactions }: { saleTransactions
                 <CustPagination
                     currentPage={saleTransactions.current_page}
                     lastPage={saleTransactions.last_page}
-                    onPageChange={(page) => router.get(route('sale-transaction.index'), { page, search, status: statusFilter }, { preserveScroll: true, preserveState: true })}
+                    onPageChange={(page) => handlePageChange(page)}
                 />
             </div>
         </AppLayout>

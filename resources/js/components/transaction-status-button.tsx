@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button'; // Adjust path based on your UI library
-import { router } from '@inertiajs/react';
 import { Fragment } from 'react';
 
 interface SaleTransaction {
@@ -9,9 +8,11 @@ interface SaleTransaction {
 
 interface TransactionStatusButtonsProps {
     saleTransaction?: SaleTransaction;
+    markAsPaid: (id: number) => void;
+    markAsCancelled: (id: number) => void;
 }
 
-const TransactionStatusButtons = ({ saleTransaction }: TransactionStatusButtonsProps) => {
+const TransactionStatusButtons = ({ saleTransaction, markAsPaid, markAsCancelled }: TransactionStatusButtonsProps) => {
     if (!saleTransaction || !saleTransaction.status || !saleTransaction.transaction_id) {
         return <p>Loading transaction data...</p>; // Fallback UI
     }
@@ -26,57 +27,18 @@ const TransactionStatusButtons = ({ saleTransaction }: TransactionStatusButtonsP
                 <>
                     <Button
                         variant="success" // Adjust variant based on your UI library (e.g., 'success' may not be valid)
-                        onClick={() =>
-                            router.post(
-                                route('sale-transaction.markAsPaid', { id: saleTransaction.transaction_id }),
-                                { preserveState: true, preserveScroll: true },
-                                {
-                                    onError: (errors) => {
-                                        console.error('Error marking as paid:', errors);
-                                        // Optionally show a user-friendly error (e.g., toast notification)
-                                    },
-                                },
-                            )
-                        }
+                        onClick={() => markAsPaid(Number(saleTransaction.transaction_id))}
                         className="mr-2" // Optional: Add margin between buttons
                     >
                         Mark as Paid
                     </Button>
-                    <Button
-                        variant="destructive"
-                        onClick={() =>
-                            router.post(
-                                route('sale-transaction.markAsCancelled', { id: saleTransaction.transaction_id }),
-                                { preserveState: true, preserveScroll: true },
-                                {
-                                    onError: (errors) => {
-                                        console.error('Error marking as cancelled:', errors);
-                                        // Optionally show a user-friendly error
-                                    },
-                                },
-                            )
-                        }
-                    >
+                    <Button variant="destructive" onClick={() => markAsCancelled(Number(saleTransaction.transaction_id))}>
                         Mark as Cancelled
                     </Button>
                 </>
             )}
             {saleTransaction.status !== 'unpaid' && saleTransaction.status !== 'cancelled' && (
-                <Button
-                    variant="destructive"
-                    onClick={() =>
-                        router.post(
-                            route('sale-transaction.markAsCancelled', { id: saleTransaction.transaction_id }),
-                            {},
-                            {
-                                onError: (errors) => {
-                                    console.error('Error marking as cancelled:', errors);
-                                    // Optionally show a user-friendly error
-                                },
-                            },
-                        )
-                    }
-                >
+                <Button variant="destructive" onClick={() => markAsCancelled(Number(saleTransaction.transaction_id))}>
                     Mark as Cancelled
                 </Button>
             )}

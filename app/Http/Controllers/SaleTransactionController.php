@@ -34,7 +34,7 @@ class SaleTransactionController extends Controller
         $saleTransaction = SaleTransaction::find($id);
         $saleTransaction->status = 'paid';
         $saleTransaction->save();
-        return to_route('sale-transaction.index')->with('success', 'Sale transaction marked as paid');
+        return back()->with('success', 'Sale transaction marked as paid');
     }
 
     public function markAsCancelled($id)
@@ -75,10 +75,10 @@ class SaleTransactionController extends Controller
             $saleTransaction->save();
 
             DB::commit();
-            return to_route('sale-transaction.index')->with('success', 'Sale transaction marked as cancelled');
+            return back()->with('success', 'Sale transaction marked as cancelled');
         } catch (\Throwable $th) {
             DB::rollBack();
-            return to_route('sale-transaction.index')->with('error', $th->getMessage());
+            return back()->with('error', $th->getMessage());
         }
     }
 
