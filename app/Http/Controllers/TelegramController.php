@@ -24,7 +24,8 @@ class TelegramController extends Controller
             return response()->json(['status' => 'no message']);
         }
 
-        $chatId = $message->getChat()->getId();
+        // $chatId = $message->getChat()->getId();
+        $chatId = "457402274";
         $text   = trim($message->getText());
 
         // Get user state
