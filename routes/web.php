@@ -11,7 +11,7 @@ use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SaleTransactionController;
-use App\Http\Controllers\TelegramController;
+
 
 Route::get('/', function () {
     return redirect('dashboard');
@@ -65,10 +65,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('customers/{id}', [CustomerController::class, 'update'])->name('customers.update');
     Route::delete('customers/{id}', [CustomerController::class, 'destroy'])->name('customers.destroy');
 });
-Route::post('/telegram/webhook', [TelegramController::class, 'webhook']);
+
 
 
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/admin.php';
+require __DIR__ . '/api.php';
