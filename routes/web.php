@@ -11,6 +11,7 @@ use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SaleTransactionController;
+use App\Http\Controllers\TelegramController;
 
 Route::get('/', function () {
     return redirect('dashboard');
