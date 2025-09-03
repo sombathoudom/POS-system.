@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+
 use Telegram\Bot\Api;
 use App\Models\UserState;
 use Illuminate\Http\Request;
 use App\Models\ExpenseCategory;
 use Telegram\Bot\Keyboard\Keyboard;
 use App\Models\Expense; // your Expense model
+use Illuminate\Support\Facades\Log;
 
 class TelegramController extends Controller
 {
@@ -191,5 +193,14 @@ class TelegramController extends Controller
         // }
 
         // return response()->json(['status' => 'ok']);
+    }
+
+    public function handle(Request $request)
+    {
+        Log::info('Telegram Webhook Payload:', $request->all());
+
+        // Add bot logic here
+
+        return response()->json(['status' => 'ok']);
     }
 }
