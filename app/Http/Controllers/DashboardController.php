@@ -56,13 +56,13 @@ class DashboardController extends Controller
             $cogs = SaleTransactionDetail::whereHas('saleTransaction', function ($query) {
                 $query->where('status', 'paid');
             })
-            ->whereBetween('created_at', [$from, $to])
-            ->with(['product:product_id,cost_price_usd', 'variant:variant_id,cost_price_usd'])
-            ->get()
-            ->sum(function ($detail) {
-                $cost = $detail->variant->cost_price_usd ?? $detail->product->cost_price_usd ?? 0;
-                return $detail->quantity * $cost;
-            });
+                ->whereBetween('created_at', [$from, $to])
+                ->with(['product:product_id,cost_price_usd', 'variant:variant_id,cost_price_usd'])
+                ->get()
+                ->sum(function ($detail) {
+                    $cost = $detail->variant->cost_price_usd ?? $detail->product->cost_price_usd ?? 0;
+                    return $detail->quantity * $cost;
+                });
             return $sales - $cogs; // Gross Profit
         });
 
@@ -73,23 +73,23 @@ class DashboardController extends Controller
 
         $monthlySaleChart = Cache::remember("monthly_sale_{$cacheKeySuffix}", 3600, function () {
             return  SaleTransaction::where('status', 'paid')
-            ->whereBetween('transaction_date', [Carbon::now()->startOfYear(), Carbon::now()->endOfYear()])
-            ->selectRaw('
+                ->whereBetween('transaction_date', [Carbon::now()->startOfYear(), Carbon::now()->endOfYear()])
+                ->selectRaw('
                 MONTH(transaction_date) as month_number,
                 MONTHNAME(transaction_date) as month_name,
                 SUM(total_amount_usd) as total_amount,
                 COUNT(*) as count
             ')
-            ->groupBy('month_number', 'month_name')
-            ->orderBy('month_number')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'month' => $item->month_name,
-                    'total_amount' => $item->total_amount,
-                    'count' => $item->count,
-                ];
-            });
+                ->groupBy('month_number', 'month_name')
+                ->orderBy('month_number')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'month' => $item->month_name,
+                        'total_amount' => $item->total_amount,
+                        'count' => intval($item->count),
+                    ];
+                });
         });
 
         return Inertia::render('dashboard', [
