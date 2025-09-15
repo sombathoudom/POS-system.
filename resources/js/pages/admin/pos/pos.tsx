@@ -3,19 +3,23 @@ import CustPagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ConfirmOrder } from '@/components/ui/confirm-order';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import useDebounce from '@/hooks/useDebounce';
-import { formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { PageProps } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import {
     ArrowLeftToLine,
     Barcode,
+    Check,
+    ChevronsUpDown,
     CreditCard,
     DollarSign,
     Edit2,
@@ -104,6 +108,7 @@ export default function POS({ productss }: POSProps) {
     const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
     const [totalKhr, setTotalKhr] = useState(0);
     const [status, setStatus] = useState('');
+    const [searchCustomerQuery, setSearchCustomerQuery] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState<Customer>({
         id: 1,
         name: 'Walk-in Customer',
@@ -118,19 +123,29 @@ export default function POS({ productss }: POSProps) {
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
-        const fetchCustomers = async () => {
-            try {
-                const response = await axios.get(route('customers.index'));
+        // const delayDebounce = async () => {
+        //     try {
+        //         const response = await axios.get(route('customers.index'));
+        //         setCustomers(response.data);
+        //     } catch (error) {
+        //         console.error('Error fetching customers:', error);
+        //     } finally {
+        //         setIsLoadingCustomers(false);
+        //     }
+        // };
+        const delayDebounce = setTimeout(async () => {
+            if (searchCustomerQuery.length > 0) {
+                const response = await axios.get(route('customers.index', { search: searchCustomerQuery }));
                 setCustomers(response.data);
-            } catch (error) {
-                console.error('Error fetching customers:', error);
-            } finally {
-                setIsLoadingCustomers(false);
+            } else {
+                setCustomers([]);
             }
-        };
+        }, 150); // debounce 300ms
 
-        fetchCustomers();
-    }, []);
+        return () => clearTimeout(delayDebounce);
+
+        // fetchCustomers();
+    }, [searchCustomerQuery]);
 
     const handleCreateCustomer = async () => {
         setCustomerButton(true);
@@ -273,6 +288,7 @@ export default function POS({ productss }: POSProps) {
         }
     };
 
+    const [openSearchCustomer, setOpenSearchCustomer] = useState(false);
     useEffect(() => {
         setTotalKhr((subtotal + deliveryFee - discount) * 4100);
     }, [subtotal, deliveryFee, discount]);
@@ -296,7 +312,7 @@ export default function POS({ productss }: POSProps) {
                             </Button>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <Select
+                            {/* <Select
                                 value={selectedCustomer.id.toString()}
                                 onValueChange={(value) =>
                                     setSelectedCustomer(
@@ -320,6 +336,60 @@ export default function POS({ productss }: POSProps) {
                                     ))}
                                 </SelectContent>
                             </Select>
+                            <Button onClick={() => setShowNewCustomerModal(true)} className="flex items-center space-x-2">
+                                <UserPlus size={20} />
+                            </Button> */}
+                            <Popover open={openSearchCustomer} onOpenChange={setOpenSearchCustomer}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" role="combobox" aria-expanded={openSearchCustomer} className="w-full justify-between">
+                                        {selectedCustomer.name ? selectedCustomer.name + ' | ' + selectedCustomer.phone : 'Select customer...'}
+                                        <ChevronsUpDown className="opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-full p-0">
+                                    <Command className="w-full">
+                                        <CommandInput
+                                            placeholder="Search customer..."
+                                            className="h-9"
+                                            onValueChange={(value) => setSearchCustomerQuery(value)}
+                                        />
+                                        <CommandList>
+                                            <CommandEmpty>No customer found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {customers.map((customer) => (
+                                                    <CommandItem
+                                                        key={customer.id}
+                                                        value={`${customer.name} ${customer.phone}`}
+                                                        data-id={customer.id}
+                                                        onSelect={(currentValue) => {
+                                                            const target = customers.find(
+                                                                (c) => `${c.name} ${c.phone}`.toLowerCase() === currentValue.toLowerCase(),
+                                                            );
+                                                            setSelectedCustomer(
+                                                                target ?? {
+                                                                    id: 1,
+                                                                    name: 'Walk-in Customer',
+                                                                    phone: 'N/A',
+                                                                    address: 'N/A',
+                                                                },
+                                                            );
+                                                            setOpenSearchCustomer(false);
+                                                        }}
+                                                    >
+                                                        {customer.name} | {customer.phone}
+                                                        <Check
+                                                            className={cn(
+                                                                'ml-auto',
+                                                                customer.name === selectedCustomer.name ? 'opacity-100' : 'opacity-0',
+                                                            )}
+                                                        />
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                             <Button onClick={() => setShowNewCustomerModal(true)} className="flex items-center space-x-2">
                                 <UserPlus size={20} />
                             </Button>
