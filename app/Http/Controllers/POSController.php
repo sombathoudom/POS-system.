@@ -53,7 +53,7 @@ class POSController extends Controller
                 'pv.color',
                 DB::raw('pv.sell_price_usd AS sell_price_usd'),
                 DB::raw('pv.quantity AS on_hand'),
-                DB::raw('CAST(pv.quantity - COALESCE(sv.sold, 0) AS SIGNED) AS current_stock'),
+                DB::raw('CAST(pv.quantity + COALESCE(sv.sold, 0) AS SIGNED) AS current_stock'),
             ]);
 
         // singles part
@@ -74,14 +74,14 @@ class POSController extends Controller
                 'p.color',
                 DB::raw('p.sell_price_usd AS sell_price_usd'),
                 DB::raw('p.quantity AS on_hand'),
-                DB::raw('CAST(p.quantity - COALESCE(sp.sold, 0) AS SIGNED) AS current_stock'),
+                DB::raw('CAST(p.quantity + COALESCE(sp.sold, 0) AS SIGNED) AS current_stock'),
             ]);
 
         // final union
         $results = DB::query()
             ->fromSub($variants->unionAll($singles), 'stock')
             ->where('stock.current_stock', '>', 0)
-            ->get();
+            ->paginate(20)->withQueryString();
         dd($results);
         return Inertia::render('admin/pos/pos', [
             'products' =>  $results
