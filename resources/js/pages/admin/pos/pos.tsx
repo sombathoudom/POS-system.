@@ -3,6 +3,7 @@ import CustPagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { ConfirmOrder } from '@/components/ui/confirm-order';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,7 +35,7 @@ import {
 import { useEffect, useState } from 'react';
 import { toast, Toaster } from 'sonner';
 
-interface Customer {
+export interface Customer {
     id: number;
     name: string;
     phone: string;
@@ -48,7 +49,7 @@ interface Variant {
     stock: number;
 }
 
-interface Product {
+export interface Product {
     key: string;
     id: number | string;
     name: string;
@@ -64,7 +65,7 @@ interface Product {
     quantity?: number;
 }
 
-interface CartItem extends Product {
+export interface CartItem extends Product {
     quantity: number;
     selectedVariant?: Variant;
     discount: number;
@@ -209,59 +210,6 @@ export default function POS({ productss }: POSProps) {
     const subtotal = cart.reduce((sum, item) => sum + getItemPrice(item) * item.quantity, 0);
     const total = subtotal + deliveryFee - discount;
 
-    // const printInvoice = () => {
-    //     const printWindow = window.open('', '_blank');
-    //     if (printWindow) {
-    //         printWindow.document.write(`
-    //             <html>
-    //                 <head>
-    //                     <title>Invoice</title>
-    //                     <style>
-    //                         body { font-family: Arial, sans-serif; }
-    //                         .invoice { max-width: 300px; margin: 0 auto; }
-    //                         .header { text-align: center; margin-bottom: 20px; }
-    //                         .customer { margin-bottom: 20px; }
-    //                         .item { margin: 10px 0; }
-    //                         .total { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; }
-    //                     </style>
-    //                 </head>
-    //                 <body>
-    //                     <div class="invoice">
-    //                         <div class="header">
-    //                             <h2>INVOICE</h2>
-    //                             <p>${invoice?.invoiceNumber}</p>
-    //                             <p>${invoice?.date.toLocaleString()}</p>
-    //                         </div>
-    //                         <div class="customer">
-    //                             <h3>Customer Details</h3>
-    //                             <p>Name: ${invoice?.customer.name}</p>
-    //                             <p>Phone: ${invoice?.customer.phone}</p>
-    //                             <p>Location: ${invoice?.customer.location}</p>
-    //                         </div>
-    //                         ${invoice?.items
-    //                             .map(
-    //                                 (item) => `
-    //                             <div class="item">
-    //                                 <p>${item.name} ${item.selectedVariant ? `(${item.selectedVariant.name})` : ''}</p>
-    //                                 <p>${item.quantity} x $${getItemPrice(item).toFixed(2)}</p>
-    //                             </div>
-    //                         `,
-    //                             )
-    //                             .join('')}
-    //                         <div class="total">
-    //                             <p>Subtotal: $${invoice?.subtotal.toFixed(2)}</p>
-    //                             <p>Delivery: $${invoice?.deliveryFee.toFixed(2)}</p>
-    //                             <p>Discount: $${invoice?.discount.toFixed(2)}</p>
-    //                             <h3>Total: $${invoice?.total.toFixed(2)}</h3>
-    //                         </div>
-    //                     </div>
-    //                 </body>
-    //             </html>
-    //         `);
-    //         printWindow.document.close();
-    //         printWindow.print();
-    //     }
-    // };
     const searchProducts = useDebounce({
         value: searchQuery,
         delay: 100,
@@ -285,11 +233,15 @@ export default function POS({ productss }: POSProps) {
         });
     };
 
-    const handleSaleProducts = () => {
+    const handleConfirmOrder = () => {
         if (!status) {
             toast.error('Please select payment status');
             return;
         }
+        setOpen(true);
+    };
+    const handleSaleProducts = () => {
+        setOpen(false);
         axios
             .post(route('pos.saleProducts'), {
                 products: cart,
@@ -612,7 +564,20 @@ export default function POS({ productss }: POSProps) {
                             </div>
                         </div>
                         <div className="mt-6 space-y-3">
-                            <Button onClick={handleSaleProducts} className="w-full" disabled={cart.length === 0}>
+                            <ConfirmOrder
+                                open={open}
+                                onOpenChange={setOpen}
+                                onConfirm={handleSaleProducts}
+                                onCancel={() => setOpen(false)}
+                                customer={selectedCustomer}
+                                total={total}
+                                discount={discount}
+                                deliveryFee={deliveryFee}
+                                totalKhr={totalKhr}
+                                status={status}
+                                cart={cart}
+                            />
+                            <Button onClick={handleConfirmOrder} className="w-full" disabled={cart.length === 0}>
                                 <CreditCard className="mr-2" size={20} />
                                 Complete Sale
                             </Button>
