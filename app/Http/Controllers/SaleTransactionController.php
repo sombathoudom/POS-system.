@@ -19,6 +19,7 @@ class SaleTransactionController extends Controller
         $saleTransactions = SaleTransaction::with('customer')->when($request->search, function ($query, $search) {
             $query->whereHas('customer', function ($query) use ($search) {
                 $query->where('name', 'like', '%' . $search . '%');
+                $query->orWhere('phone', 'like', '%' . $search . '%');
             });
         })->when($request->status, function ($query, $status) {
             $query->where('status', $status);
