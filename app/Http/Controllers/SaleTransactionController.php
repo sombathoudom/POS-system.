@@ -85,6 +85,7 @@ class SaleTransactionController extends Controller
     public function detail($id)
     {
         $saleTransaction = SaleTransaction::with('saleTransactionDetails', 'saleTransactionDetails.product', 'saleTransactionDetails.variant', 'customer')->find($id)->toResource();
+
         return Inertia::render('admin/sale-transaction/detail', [
             'saleTransaction' => $saleTransaction,
         ]);

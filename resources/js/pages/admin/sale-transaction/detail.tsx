@@ -4,7 +4,7 @@ import AppLayout from '@/layouts/app-layout';
 import { formatCurrency, formatCurrencyKHR, formatDate } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ArrowLeftIcon, PrinterIcon } from 'lucide-react';
-
+import { Badge } from '@/components/ui/badge';
 export interface SaleTransactionDetail {
     type: string;
     product_id: number;
@@ -17,6 +17,9 @@ export interface SaleTransactionDetail {
     size: string;
     stock_remaining: number;
     color: string;
+    calculation_type: string;
+    calculation_value: string;
+    return_date: string;
 }
 
 interface SaleTransaction {
@@ -46,6 +49,7 @@ export interface SaleTransactionResource {
 
 export default function DetailSaleTransaction({ saleTransaction }: { saleTransaction: SaleTransactionResource }) {
     const { data } = saleTransaction;
+    console.log(data);
     return (
         <AppLayout>
             <div className="space-y-6 p-4">
@@ -99,23 +103,31 @@ export default function DetailSaleTransaction({ saleTransaction }: { saleTransac
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead>Image</TableHead>
                             <TableHead>Product</TableHead>
                             <TableHead>Size</TableHead>
                             <TableHead>Color</TableHead>
+                            <TableHead>Type</TableHead>
                             <TableHead>Quantity</TableHead>
                             <TableHead>Unit Price</TableHead>
                             <TableHead>Subtotal</TableHead>
+                            <TableHead>Return Date</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {data.sale_transaction_details.map((detail, index) => (
                             <TableRow key={index}>
+                                <TableCell><img src={detail.images} alt={detail.name} className="w-10 h-10" loading='lazy'/></TableCell>
                                 <TableCell>{detail.name}</TableCell>
                                 <TableCell>{detail.size}</TableCell>
                                 <TableCell>{detail.color}</TableCell>
-                                <TableCell>{detail.quantity}</TableCell>
+                                <TableCell>
+                                    <Badge variant={detail.calculation_type == 'decrease' ? 'success' : 'destructive'}>{detail.calculation_type == 'decrease' ? 'Sale' : 'Return'}</Badge>
+                                </TableCell>
+                                <TableCell><Badge variant={detail.calculation_type == 'decrease' ? 'success' : 'destructive'}>{detail.calculation_value}</Badge></TableCell>
                                 <TableCell>{formatCurrency(detail.unit_price)}</TableCell>
                                 <TableCell>{formatCurrency(detail.subtotal)}</TableCell>
+                                <TableCell>{detail.return_date ? formatDate(detail.return_date) : '-'}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
